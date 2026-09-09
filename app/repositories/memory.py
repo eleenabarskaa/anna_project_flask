@@ -67,6 +67,9 @@ class InMemoryTriggerRepository:
     def latest(self, limit: int = 5) -> list[Trigger]:
         return sorted(store.triggers, key=lambda t: t.date, reverse=True)[:limit]
 
+    def distinct_types(self) -> list[str]:
+        return sorted({t.type for t in store.triggers})
+
     @staticmethod
     def _filtered(category: str | None) -> list[Trigger]:
         rows = sorted(store.triggers, key=lambda t: t.date, reverse=True)

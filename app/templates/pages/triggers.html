@@ -8,7 +8,7 @@
     <h1 style="margin:8px 0 0;font-size:24px;font-weight:600;letter-spacing:-.015em">Triggers</h1>
   </div>
   <div class="mono" style="font-size:11px;color:rgba(18,22,27,.5)">
-    {{ rows|length }} of {{ total_triggers }} events · look-back {{ lookback }} months
+    {{ rows|length }} of {{ total }} events · look-back {{ lookback }} months
   </div>
 </div>
 
@@ -54,11 +54,15 @@
           <div class="pretty" style="margin-top:3px;font-size:12.5px;color:rgba(18,22,27,.62)">{{ t.headline }}</div>
           <div class="label" style="margin-top:6px">{{ t.type }} · {{ t.source }}</div>
         </div>
-        <div class="pretty" style="font-size:12.5px;color:rgba(18,22,27,.7)">{{ t.parties }}</div>
-        <div class="mono" style="font-size:12.5px">{{ t.est }}</div>
+        <div class="pretty" style="font-size:12.5px;color:rgba(18,22,27,.7)">{{ t.parties or '—' }}</div>
+        <div class="mono" style="font-size:12.5px">{{ t.est or '—' }}</div>
         <div>
-          <div class="meter"><span class="tone-{{ t.heat }}" style="width:{{ t.confidence_pct }}%"></span></div>
-          <div style="margin-top:5px;font-size:10.5px;color:rgba(18,22,27,.5)">{{ t.confidence }}</div>
+          {% if t.confidence_pct is not none %}
+            <div class="meter"><span class="tone-{{ t.heat }}" style="width:{{ t.confidence_pct }}%"></span></div>
+            <div style="margin-top:5px;font-size:10.5px;color:rgba(18,22,27,.5)">{{ t.confidence }}</div>
+          {% else %}
+            <div class="mono" style="font-size:12.5px;color:rgba(18,22,27,.35)">—</div>
+          {% endif %}
         </div>
         <div class="mono" style="font-size:13px;color:rgba(18,22,27,.4);text-align:right">{{ '–' if is_open else '+' }}</div>
       </a>
@@ -73,6 +77,9 @@
             <div>
               <div class="label">Individuals in scope</div>
               <div style="margin-top:9px;display:flex;flex-direction:column;gap:8px">
+                {% if not t.people %}
+                  <div style="font-size:12.5px;color:rgba(18,22,27,.35)">—</div>
+                {% endif %}
                 {% for pp in t.people %}
                   <a href="{{ url_for('web.prospect_detail', prospect_id=pp.id) }}"
                      style="text-align:left;border:1px solid rgba(18,22,27,.14);background:#fff;padding:8px 10px;color:inherit">
@@ -88,7 +95,8 @@
                 <a href="{{ t.url }}" rel="noreferrer noopener" target="_blank">{{ t.url }}</a>
               </div>
               <div style="margin-top:10px;font-size:11.5px;color:rgba(18,22,27,.5)">
-                Ingested {{ t.ingested_at }} · classified automatically, reviewed by {{ t.reviewer }}
+                {% if t.ingested_at %}Ingested {{ t.ingested_at }}{% endif %}
+                {% if t.reviewer %} · reviewed by {{ t.reviewer }}{% endif %}
               </div>
             </div>
           </div>

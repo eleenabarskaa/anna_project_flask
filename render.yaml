@@ -1,0 +1,32 @@
+# Blueprint для Render: описывает сервис кодом, чтобы настройки не пришлось
+# каждый раз кликать в интерфейсе. Можно и не использовать — тогда просто
+# заполните Build/Start Command в форме теми же значениями.
+
+services:
+  - type: web
+    name: meridian-desk
+    runtime: python
+    plan: free
+    region: oregon
+    branch: main
+
+    buildCommand: pip install -r requirements.txt
+    # -w 1 обязательно, пока данные лежат в памяти процесса:
+    # несколько воркеров = несколько независимых копий состояния.
+    startCommand: gunicorn -w 1 -b 0.0.0.0:$PORT wsgi:app
+
+    healthCheckPath: /healthz
+
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.6"
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true      # Render сгенерирует секрет сам
+      - key: REPOSITORY_BACKEND
+        value: memory
+      - key: TRIGGERS_PER_PAGE
+        value: "8"
+      - key: DEFAULT_LOOKBACK_MONTHS
+        value: "3"

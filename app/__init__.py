@@ -9,13 +9,13 @@ import os
 
 from flask import Flask
 
-from app.config import get_config
+from app.config import build_config
 from app.repositories import build_repositories
 
 
 def create_app(config_name: str | None = None) -> Flask:
     app = Flask(__name__, instance_relative_config=True)
-    app.config.from_object(get_config(config_name))
+    app.config.from_mapping(build_config(config_name))
     app.config.from_prefixed_env()  # FLASK_* переменные перекрывают дефолты
 
     # Репозитории доступны как current_app.repos
@@ -69,7 +69,6 @@ def _register_template_globals(app: Flask) -> None:
             "user_initials": initials,
             "user_location": app.config["DESK_USER_LOCATION"],
             "coverage_days": seed_data.COVERAGE_DAYS,
-            "total_triggers": seed_data.TOTAL_TRIGGERS,
             "prospect_count": len(seed_data.PROSPECTS),
             "now_label": datetime.now().strftime("%A · %-d %B %Y · %H:%M CET"),
         }

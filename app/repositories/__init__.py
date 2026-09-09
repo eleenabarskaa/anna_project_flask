@@ -1,7 +1,10 @@
 """Точка сборки репозиториев.
 
-Здесь выбирается конкретная реализация. Сейчас — in-memory; когда придут
-доступы к БД, добавляем ветку по `REPOSITORY_BACKEND` из конфига.
+Здесь выбирается конкретная реализация по `REPOSITORY_BACKEND`:
+
+  memory    — всё на демо-данных из seed_data.py (по умолчанию)
+  supabase  — триггеры читаются из реальной таблицы Supabase,
+              остальные экраны пока остаются на демо-данных
 """
 
 from __future__ import annotations
@@ -16,25 +19,40 @@ from app.repositories.memory import (
     InMemoryTriggerRepository,
 )
 
+BACKENDS = ("memory", "supabase")
+
 
 class Repositories:
     """Контейнер репозиториев, доступный как `current_app.repos`."""
 
     def __init__(self, backend: str = "memory", settings: dict[str, Any] | None = None) -> None:
+        if backend not in BACKENDS:
+            raise ValueError(
+                f"Неизвестный REPOSITORY_BACKEND={backend!r}. Доступно: {', '.join(BACKENDS)}."
+            )
+
         self.backend = backend
         self.settings = settings or {}
 
-        if backend == "memory":
-            self.triggers = InMemoryTriggerRepository()
-            self.prospects = InMemoryProspectRepository()
-            self.dossiers = InMemoryDossierRepository()
-            self.sources = InMemorySourceRepository()
-            self.desk = InMemoryDeskRepository()
-        else:  # pragma: no cover - появится вместе с реальной БД
-            raise ValueError(
-                f"Неизвестный REPOSITORY_BACKEND={backend!r}. "
-                "Доступно: 'memory'. Реализацию для БД добавим при подключении."
+        # Пока из Supabase приходят только триггеры — всё остальное на заглушках.
+        self.prospects = InMemoryProspectRepository()
+        self.dossiers = InMemoryDossierRepository()
+        self.sources = InMemorySourceRepository()
+        self.desk = InMemoryDeskRepository()
+
+        if backend == "supabase":
+            from app.repositories.supabase import PostgrestClient, SupabaseTriggerRepository
+
+            client = PostgrestClient(
+                base_url=self.settings.get("SUPABASE_URL") or "",
+                api_key=self.settings.get("SUPABASE_SECRET_KEY") or "",
+                timeout=int(self.settings.get("INTEGRATIONS_TIMEOUT", 15)),
             )
+            self.triggers = SupabaseTriggerRepository(
+                client, table=self.settings.get("SUPABASE_TRIGGERS_TABLE", "triggers")
+            )
+        else:
+            self.triggers = InMemoryTriggerRepository()
 
 
 def build_repositories(config: dict[str, Any]) -> Repositories:

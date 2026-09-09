@@ -282,6 +282,16 @@ input, select, button { font-family: inherit; }
 .meter { height: 4px; background: rgba(18, 22, 27, 0.1); }
 .meter > span { display: block; height: 4px; }
 
+.banner {
+  border: 1px solid var(--amber);
+  border-left-width: 3px;
+  background: #fffaf3;
+  color: rgba(18, 22, 27, 0.8);
+  padding: 11px 14px;
+  font-size: 12.5px;
+  margin-bottom: 18px;
+}
+
 /* --- KPI --------------------------------------------------------------- */
 
 .kpis {

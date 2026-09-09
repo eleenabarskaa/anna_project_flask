@@ -18,6 +18,9 @@
 
     <main class="main">
       <div class="main-inner">
+        {% if data_error %}
+          <div class="banner">{{ data_error }}</div>
+        {% endif %}
         {% block content %}{% endblock %}
       </div>
     </main>

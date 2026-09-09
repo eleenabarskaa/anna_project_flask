@@ -3,16 +3,16 @@
 Flask-приложение, собранное по макетам `*.dc.html`: витрина событий-триггеров,
 поиск проспектов, досье и конфигурация источников для private-wealth деска.
 
-Сейчас данные берутся из **in-memory заглушек** (перенесены один-в-один из макетов).
-Весь доступ к данным идёт через репозитории, поэтому подключение реальных БД
-и интеграций не затронет ни шаблоны, ни API.
+Триггеры читаются из **реальной таблицы Supabase**, остальные экраны пока работают
+на демо-данных из макетов. Источник переключается одной переменной
+`REPOSITORY_BACKEND` (`memory` | `supabase`).
 
 ## Запуск
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env
+cp .env.example .env          # заполнить SUPABASE_URL и SUPABASE_SECRET_KEY
 
 flask --app wsgi run --debug          # http://127.0.0.1:5000
 # или
@@ -34,7 +34,8 @@ app/
   models.py              доменные dataclass-модели + to_dict()
   repositories/
     base.py              протоколы репозиториев — контракт для любой реализации
-    memory.py            текущая in-memory реализация
+    memory.py            демо-данные (backend=memory)
+    supabase.py          PostgREST-клиент и маппинг таблицы triggers (backend=supabase)
     seed_data.py         демо-данные из макетов
     __init__.py          выбор бэкенда по REPOSITORY_BACKEND
   services/desk.py       сборка вью-моделей (страницы и API используют один сервис)
@@ -82,12 +83,32 @@ POST /api/v1/sources/categories/<key>/toggle
 GET  /api/v1/sources/logs
 ```
 
-## Как подключить реальную БД
+## Supabase
 
-1. Заполнить `DATABASE_URL` в `.env`.
-2. Добавить `app/repositories/sql.py` с классами, реализующими протоколы из
-   `app/repositories/base.py` (сигнатуры уже зафиксированы).
-3. В `app/repositories/__init__.py` добавить ветку `backend == "sql"`.
-4. Переключить `REPOSITORY_BACKEND=sql`.
+Таблица `triggers` читается через PostgREST (`/rest/v1/triggers`) на stdlib —
+дополнительных зависимостей нет. Маппинг колонок в модель — в
+`app/repositories/supabase.py`:
 
-Шаблоны, сервисы и API менять не нужно.
+| Колонка таблицы | Поле в UI |
+|---|---|
+| `event_date` | Date |
+| `company_or_person` | Event (хвост `(bidder: …)` отрезается) |
+| `context` | Headline = первое предложение; полный текст в раскрытой строке |
+| `trigger_type` | тип события и значения фильтра Category |
+| `bidder` / `seller` | Counterparties, Principal |
+| `source` | ссылка + домен как имя источника |
+| `created_at`, `founded` | «Ingested … · reviewed by …» |
+
+Колонок под Est. size, Confidence и Individuals in scope в таблице нет —
+в этих местах UI показывает «—». Как только колонки появятся, достаточно
+заполнить соответствующие поля в `row_to_trigger()`.
+
+Если Supabase недоступен или ключ неверный, страница не падает: показывается
+предупреждение, остальной интерфейс продолжает работать.
+
+### Что дальше
+
+Прочие экраны (Prospect Brief, досье, watchlist) ждут своих таблиц.
+Порядок подключения тот же: класс в `app/repositories/`, реализующий протокол
+из `base.py`, и ветка в `app/repositories/__init__.py`. Шаблоны, сервисы и API
+менять не нужно.

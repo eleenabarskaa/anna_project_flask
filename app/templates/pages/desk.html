@@ -39,7 +39,7 @@
     <section class="panel">
       <div class="panel-head">
         <h2>Last triggers</h2>
-        <a class="btn-link" href="{{ url_for('web.triggers') }}">All {{ total_triggers }} →</a>
+        <a class="btn-link" href="{{ url_for('web.triggers') }}">All triggers →</a>
       </div>
       {% for t in latest_triggers %}
         <a class="row row-hover feed-row" style="text-decoration:none;color:inherit"
@@ -58,11 +58,13 @@
           </div>
           <div>
             <div class="label">Principal</div>
-            <div style="margin-top:4px;font-size:12.5px">{{ t.principal }}</div>
+            <div style="margin-top:4px;font-size:12.5px">{{ t.principal or '—' }}</div>
           </div>
           <div class="feed-right" style="text-align:right">
-            <div class="mono" style="font-size:13px">{{ t.est }}</div>
-            <div style="margin-top:4px;font-size:10.5px;color:rgba(18,22,27,.5)">{{ t.confidence }} conf.</div>
+            <div class="mono" style="font-size:13px">{{ t.est or '—' }}</div>
+            <div style="margin-top:4px;font-size:10.5px;color:rgba(18,22,27,.5)">
+              {{ (t.confidence ~ ' conf.') if t.confidence else '—' }}
+            </div>
           </div>
         </a>
       {% endfor %}

@@ -1,12 +1,15 @@
 """Конфигурация приложения.
 
-Все внешние подключения (БД, кэш, интеграции) читаются из переменных
-окружения — когда пришлёте креды, достаточно заполнить .env.
+Все внешние подключения (Supabase, БД, кэш) читаются из переменных окружения.
+Значения вычисляются в момент вызова `build_config()`, а не при импорте модуля —
+иначе переменные, выставленные после импорта (тесты, скрипты, ноутбуки),
+молча игнорировались бы.
 """
 
 from __future__ import annotations
 
 import os
+from typing import Any
 
 
 def _bool(name: str, default: bool = False) -> bool:
@@ -16,52 +19,48 @@ def _bool(name: str, default: bool = False) -> bool:
     return raw.strip().lower() in {"1", "true", "yes", "on"}
 
 
-class BaseConfig:
-    SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-me")
-    JSON_SORT_KEYS = False
-
-    # Выбор реализации репозиториев: memory | (позже) sql
-    REPOSITORY_BACKEND = os.getenv("REPOSITORY_BACKEND", "memory")
-
-    # --- Заготовки под будущие подключения -------------------------------
-    # Основная БД (Postgres/MySQL): postgresql+psycopg://user:pass@host:5432/db
-    DATABASE_URL = os.getenv("DATABASE_URL")
-    # Полнотекстовый поиск / витрина событий
-    SEARCH_URL = os.getenv("SEARCH_URL")
-    # Кэш и очередь ингеста
-    REDIS_URL = os.getenv("REDIS_URL")
-    # Внешние интеграции (новостные API, реестры, CRM)
-    INTEGRATIONS_TIMEOUT = int(os.getenv("INTEGRATIONS_TIMEOUT", "15"))
-
-    # --- Параметры домена -------------------------------------------------
-    TRIGGERS_PER_PAGE = int(os.getenv("TRIGGERS_PER_PAGE", "8"))
-    DEFAULT_LOOKBACK_MONTHS = int(os.getenv("DEFAULT_LOOKBACK_MONTHS", "3"))
-    DESK_USER_NAME = os.getenv("DESK_USER_NAME", "Anna Kaufmann")
-    DESK_USER_LOCATION = os.getenv("DESK_USER_LOCATION", "Zurich · Desk 4")
+def _int(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, default))
+    except (TypeError, ValueError):
+        return default
 
 
-class DevelopmentConfig(BaseConfig):
-    DEBUG = True
-    TEMPLATES_AUTO_RELOAD = True
+def build_config(name: str | None = None) -> dict[str, Any]:
+    env = name or os.getenv("FLASK_ENV", "development")
 
+    config: dict[str, Any] = {
+        "ENV_NAME": env,
+        "SECRET_KEY": os.getenv("SECRET_KEY", "dev-secret-change-me"),
+        "JSON_SORT_KEYS": False,
 
-class TestingConfig(BaseConfig):
-    TESTING = True
-    SECRET_KEY = "testing"
+        # Источник данных: memory | supabase
+        "REPOSITORY_BACKEND": os.getenv("REPOSITORY_BACKEND", "memory"),
 
+        # --- Supabase ---------------------------------------------------
+        # SUPABASE_SECRET_KEY — service-role ключ, обходит RLS.
+        # Только в .env и в переменных окружения хостинга, никогда в репозитории.
+        "SUPABASE_URL": os.getenv("SUPABASE_URL"),
+        "SUPABASE_SECRET_KEY": os.getenv("SUPABASE_SECRET_KEY"),
+        "SUPABASE_TRIGGERS_TABLE": os.getenv("SUPABASE_TRIGGERS_TABLE", "triggers"),
 
-class ProductionConfig(BaseConfig):
-    DEBUG = False
-    SESSION_COOKIE_SECURE = _bool("SESSION_COOKIE_SECURE", True)
+        # --- заготовки под будущие подключения --------------------------
+        "DATABASE_URL": os.getenv("DATABASE_URL"),
+        "REDIS_URL": os.getenv("REDIS_URL"),
+        "INTEGRATIONS_TIMEOUT": _int("INTEGRATIONS_TIMEOUT", 15),
 
+        # --- параметры домена -------------------------------------------
+        "TRIGGERS_PER_PAGE": _int("TRIGGERS_PER_PAGE", 8),
+        "DEFAULT_LOOKBACK_MONTHS": _int("DEFAULT_LOOKBACK_MONTHS", 3),
+        "DESK_USER_NAME": os.getenv("DESK_USER_NAME", "Anna Kaufmann"),
+        "DESK_USER_LOCATION": os.getenv("DESK_USER_LOCATION", "Zurich · Desk 4"),
+    }
 
-CONFIGS = {
-    "development": DevelopmentConfig,
-    "testing": TestingConfig,
-    "production": ProductionConfig,
-}
+    if env == "development":
+        config.update(DEBUG=True, TEMPLATES_AUTO_RELOAD=True)
+    elif env == "testing":
+        config.update(TESTING=True, SECRET_KEY="testing")
+    else:  # production
+        config.update(DEBUG=False, SESSION_COOKIE_SECURE=_bool("SESSION_COOKIE_SECURE", True))
 
-
-def get_config(name: str | None = None):
-    name = name or os.getenv("FLASK_ENV", "development")
-    return CONFIGS.get(name, DevelopmentConfig)
+    return config

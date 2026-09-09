@@ -67,21 +67,28 @@ class Person(Serializable):
 
 @dataclass
 class Trigger(Serializable):
+    """Событие-триггер.
+
+    Поля после `type` необязательные: в реальной таблице Supabase части из них
+    (est, confidence, people) пока нет, и они приходят как None. UI показывает
+    в таких местах «—» вместо того, чтобы что-то додумывать.
+    """
+
     id: str
     date: date
     company: str
     headline: str
     type: str
-    source: str
-    principal: str
-    est: str
-    confidence: str
-    confidence_pct: int
-    parties: str
-    context: str
-    url: str
-    ingested_at: str
-    reviewer: str
+    source: str = "—"
+    principal: str | None = None
+    est: str | None = None
+    confidence: str | None = None
+    confidence_pct: int | None = None
+    parties: str | None = None
+    context: str = ""
+    url: str = ""
+    ingested_at: str | None = None
+    reviewer: str | None = None
     people: list[Person] = field(default_factory=list)
 
     @property
@@ -91,7 +98,7 @@ class Trigger(Serializable):
             Confidence.HIGH: "amber",
             Confidence.MEDIUM: "blue",
             Confidence.LOW: "green",
-        }.get(self.confidence, "blue")
+        }.get(self.confidence or "", "faint")
 
 
 @dataclass

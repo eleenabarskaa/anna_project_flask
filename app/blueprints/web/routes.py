@@ -96,10 +96,9 @@ def triggers():
         nav_active="triggers",
         crumb="Signals · Trigger feed",
         category=category,
-        categories=[*[c.key for c in current_app.repos.sources.categories()], "All categories"],  # type: ignore[attr-defined]
         lookback=lookback,
         open_id=open_id,
-        **data,
+        **data,  # rows, total, page, pages, per_page, categories, data_error
     )
 
 

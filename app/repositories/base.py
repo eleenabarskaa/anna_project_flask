@@ -37,6 +37,10 @@ class TriggerRepository(Protocol):
 
     def latest(self, limit: int = 5) -> list[Trigger]: ...
 
+    def distinct_types(self) -> list[str]:
+        """Значения trigger_type, встречающиеся в данных — для фильтра."""
+        ...
+
 
 class ProspectRepository(Protocol):
     def list(self, *, query: str | None = None) -> list[Prospect]: ...

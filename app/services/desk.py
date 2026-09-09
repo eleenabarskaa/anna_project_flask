@@ -7,10 +7,25 @@ from typing import Any
 from app.models import Prospect
 from app.repositories import Repositories, seed_data
 
+DATA_SOURCE_ERROR = (
+    "Не удалось получить события из источника данных. "
+    "Показаны пустые списки — проверьте SUPABASE_URL / SUPABASE_SECRET_KEY."
+)
+
 
 class DeskService:
     def __init__(self, repos: Repositories) -> None:
         self.repos = repos
+
+    @staticmethod
+    def _safe(call, fallback):
+        """Ошибка внешнего источника не должна ронять всю страницу."""
+        from app.repositories.supabase import PostgrestError
+
+        try:
+            return call(), None
+        except PostgrestError as err:
+            return fallback, f"{DATA_SOURCE_ERROR} ({err})"
 
     # --- Desk / overview -------------------------------------------------
 
@@ -18,9 +33,11 @@ class DeskService:
         return [k.to_dict() for k in seed_data.KPIS]
 
     def overview(self) -> dict[str, Any]:
+        latest, error = self._safe(lambda: self.repos.triggers.latest(5), [])
         return {
             "kpis": self.kpis(),
-            "latest_triggers": self.repos.triggers.latest(5),
+            "latest_triggers": latest,
+            "data_error": error,
             "watchlist": self.repos.desk.watchlist(),
             "tasks": self.repos.desk.tasks(),
             "queue": self.repos.prospects.queue(),
@@ -85,8 +102,14 @@ class DeskService:
 
     def triggers_page(self, *, category: str | None, page: int, per_page: int) -> dict[str, Any]:
         offset = (page - 1) * per_page
-        rows = self.repos.triggers.list(category=category, limit=per_page, offset=offset)
-        total = self.repos.triggers.count(category=category)
+
+        def fetch():
+            rows = self.repos.triggers.list(category=category, limit=per_page, offset=offset)
+            total = self.repos.triggers.count(category=category)
+            types = self.repos.triggers.distinct_types()
+            return rows, total, types
+
+        (rows, total, types), error = self._safe(fetch, ([], 0, []))
         pages = max(1, -(-total // per_page))
         return {
             "rows": rows,
@@ -94,6 +117,8 @@ class DeskService:
             "page": min(page, pages),
             "pages": pages,
             "per_page": per_page,
+            "categories": [*types, "All categories"],
+            "data_error": error,
         }
 
     # --- Sources ---------------------------------------------------------
