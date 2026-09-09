@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block title %}Triggers{% endblock %}
+
+{% block content %}
+<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:18px">
+  <div>
+    <div class="eyebrow">Signal feed · market triggers</div>
+    <h1 style="margin:8px 0 0;font-size:24px;font-weight:600;letter-spacing:-.015em">Triggers</h1>
+  </div>
+  <div class="mono" style="font-size:11px;color:rgba(18,22,27,.5)">
+    {{ rows|length }} of {{ total_triggers }} events · look-back {{ lookback }} months
+  </div>
+</div>
+
+<form method="get" action="{{ url_for('web.triggers') }}" class="panel"
+      style="padding:14px 16px;margin-bottom:16px;display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end">
+  <div style="min-width:210px">
+    <div class="label" style="margin-bottom:6px">Category</div>
+    <select name="category" style="width:100%;height:32px;border:1px solid rgba(18,22,27,.16);background:#fff;font-size:12.5px;padding:0 8px;outline:none">
+      {% for c in categories %}
+        <option value="{{ c }}" {% if c == category %}selected{% endif %}>{{ c }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div style="min-width:220px">
+    <div class="label" style="display:flex;justify-content:space-between;margin-bottom:6px">
+      <span>Look-back</span><span>{{ lookback }} mo</span>
+    </div>
+    <input type="range" name="lookback" min="1" max="12" value="{{ lookback }}"
+           style="width:100%;accent-color:var(--blue)">
+  </div>
+  <div style="display:flex;gap:8px;margin-left:auto;flex-wrap:wrap">
+    <button class="btn btn-primary btn-md" type="submit">Apply</button>
+    <a class="btn btn-md" href="{{ url_for('api.list_triggers', category=category) }}">Export JSON</a>
+  </div>
+</form>
+
+<div class="panel scroll-x">
+  <div class="table-head trigger-cols">
+    <div>Date</div><div>Event</div><div>Counterparties</div><div>Est. size</div><div>Confidence</div><div></div>
+  </div>
+
+  {% for t in rows %}
+    {% set is_open = (t.id == open_id) %}
+    <div>
+      <a class="grid-row trigger-cols row-hover top" style="text-decoration:none;color:inherit"
+         href="{{ url_for('web.triggers', category=category, lookback=lookback, page=page, event='' if is_open else t.id) }}">
+        <div>
+          <div class="mono" style="font-size:11px;color:rgba(18,22,27,.55)">{{ t.date.isoformat() }}</div>
+          <div class="heat-bar tone-{{ t.heat }}" style="width:22px"></div>
+        </div>
+        <div style="min-width:0">
+          <div style="font-size:13px;font-weight:600">{{ t.company }}</div>
+          <div class="pretty" style="margin-top:3px;font-size:12.5px;color:rgba(18,22,27,.62)">{{ t.headline }}</div>
+          <div class="label" style="margin-top:6px">{{ t.type }} · {{ t.source }}</div>
+        </div>
+        <div class="pretty" style="font-size:12.5px;color:rgba(18,22,27,.7)">{{ t.parties }}</div>
+        <div class="mono" style="font-size:12.5px">{{ t.est }}</div>
+        <div>
+          <div class="meter"><span class="tone-{{ t.heat }}" style="width:{{ t.confidence_pct }}%"></span></div>
+          <div style="margin-top:5px;font-size:10.5px;color:rgba(18,22,27,.5)">{{ t.confidence }}</div>
+        </div>
+        <div class="mono" style="font-size:13px;color:rgba(18,22,27,.4);text-align:right">{{ '–' if is_open else '+' }}</div>
+      </a>
+
+      {% if is_open %}
+        <div class="expand">
+          <div class="expand-grid">
+            <div>
+              <div class="label">Context</div>
+              <p class="pretty" style="margin:7px 0 0;font-size:12.5px;line-height:1.6;color:rgba(18,22,27,.75)">{{ t.context }}</p>
+            </div>
+            <div>
+              <div class="label">Individuals in scope</div>
+              <div style="margin-top:9px;display:flex;flex-direction:column;gap:8px">
+                {% for pp in t.people %}
+                  <a href="{{ url_for('web.prospect_detail', prospect_id=pp.id) }}"
+                     style="text-align:left;border:1px solid rgba(18,22,27,.14);background:#fff;padding:8px 10px;color:inherit">
+                    <span style="display:block;font-size:12.5px;font-weight:600">{{ pp.name }}</span>
+                    <span style="display:block;margin-top:2px;font-size:11.5px;color:rgba(18,22,27,.55)">{{ pp.role }}</span>
+                  </a>
+                {% endfor %}
+              </div>
+            </div>
+            <div>
+              <div class="label">Source</div>
+              <div class="mono" style="margin-top:7px;font-size:11px;color:var(--blue);word-break:break-all">
+                <a href="{{ t.url }}" rel="noreferrer noopener" target="_blank">{{ t.url }}</a>
+              </div>
+              <div style="margin-top:10px;font-size:11.5px;color:rgba(18,22,27,.5)">
+                Ingested {{ t.ingested_at }} · classified automatically, reviewed by {{ t.reviewer }}
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  {% else %}
+    <div class="row muted" style="padding:24px 16px">Событий в этой категории нет.</div>
+  {% endfor %}
+
+  <div class="pager">
+    {% if page > 1 %}
+      <a class="btn" href="{{ url_for('web.triggers', category=category, lookback=lookback, page=page-1) }}">← Previous</a>
+    {% else %}
+      <span class="btn" style="opacity:.4;pointer-events:none">← Previous</span>
+    {% endif %}
+    <div class="mono" style="font-size:11px;color:rgba(18,22,27,.5)">Page {{ page }} of {{ pages }}</div>
+    {% if page < pages %}
+      <a class="btn" href="{{ url_for('web.triggers', category=category, lookback=lookback, page=page+1) }}">Next →</a>
+    {% else %}
+      <span class="btn" style="opacity:.4;pointer-events:none">Next →</span>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

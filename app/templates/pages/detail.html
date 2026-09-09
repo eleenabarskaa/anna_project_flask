@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% block title %}{{ dossier.name }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div class="eyebrow">Dossier · public-source research</div>
+  <h1>Prospect Brief</h1>
+</div>
+
+<a class="btn-link" href="{{ url_for('web.prospects') }}" style="display:inline-block;margin-bottom:14px">← Back to results</a>
+
+<div class="dossier-head">
+  <div style="min-width:260px;flex:1">
+    <h2>{{ dossier.name }}</h2>
+    <div style="margin-top:6px;font-size:13.5px;color:rgba(18,22,27,.62)">{{ dossier.role }}</div>
+    <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:7px">
+      {% for tag in dossier.tags %}<span class="tag">{{ tag }}</span>{% endfor %}
+    </div>
+  </div>
+
+  <div class="dossier-stats">
+    {% for s in dossier.stats %}
+      <div class="dossier-stat">
+        <div class="label">{{ s.label }}</div>
+        <div class="dossier-stat-value">{{ s.value }}</div>
+        <div class="dossier-stat-note">{{ s.note }}</div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <form method="post" action="{{ url_for('web.toggle_watch', prospect_id=prospect.id) }}" class="inline-form">
+      <button class="btn btn-primary btn-lg" type="submit">
+        {{ 'On watchlist ✓' if prospect.watched else 'Add to watchlist' }}
+      </button>
+    </form>
+    <a class="btn btn-lg" href="{{ url_for('api.get_prospect', prospect_id=prospect.id) }}">Export JSON</a>
+  </div>
+</div>
+
+<div class="grid-2" style="margin-top:18px">
+  <div class="stack">
+    <section class="panel">
+      <div class="panel-head"><h2>Situation</h2></div>
+      <div class="panel-body">
+        <p class="pretty" style="margin:0;font-size:13.5px;line-height:1.6;color:rgba(18,22,27,.78)">{{ dossier.summary }}</p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Verified facts · each line carries its source</h2></div>
+      {% for f in dossier.facts %}
+        <div class="grid-row fact-cols top">
+          <div class="label">{{ f.label }}</div>
+          <div class="pretty" style="font-size:12.5px;color:rgba(18,22,27,.8)">{{ f.value }}</div>
+          <div class="mono fact-source" style="font-size:10px;color:rgba(18,22,27,.45);text-align:right">{{ f.source }}</div>
+        </div>
+      {% endfor %}
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Event timeline</h2></div>
+      <div style="padding:18px 16px">
+        {% for e in dossier.timeline %}
+          <div class="timeline-item timeline-cols">
+            <div class="mono" style="font-size:10.5px;color:rgba(18,22,27,.5);padding-top:2px">{{ e.date }}</div>
+            <div class="timeline-rail">
+              <span class="timeline-dot tone-{{ e.tone }}"></span>
+              {% if not loop.last %}<span class="timeline-line"></span>{% endif %}
+            </div>
+            <div style="min-width:0">
+              <div style="font-size:12.5px;font-weight:600">{{ e.title }}</div>
+              <div class="pretty" style="margin-top:3px;font-size:12px;color:rgba(18,22,27,.6)">{{ e.detail }}</div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <div class="stack">
+    <section class="panel">
+      <div class="panel-head"><h2>Talking points</h2></div>
+      {% for a in dossier.angles %}
+        <div class="row" style="display:flex;gap:10px">
+          <span class="mono" style="font-size:10.5px;color:rgba(18,22,27,.35);padding-top:1px">{{ a.n }}</span>
+          <span class="pretty" style="font-size:12.5px;color:rgba(18,22,27,.75)">{{ a.text }}</span>
+        </div>
+      {% endfor %}
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Known relationships</h2></div>
+      {% for r in dossier.relations %}
+        <div class="row" style="display:flex;justify-content:space-between;gap:12px;align-items:center">
+          <div style="min-width:0">
+            <div style="font-size:12.5px;font-weight:600">{{ r.name }}</div>
+            <div style="margin-top:2px;font-size:11.5px;color:rgba(18,22,27,.55)">{{ r.tie }}</div>
+          </div>
+          <span class="mono" style="font-size:10px;color:rgba(18,22,27,.45);white-space:nowrap">{{ r.strength }}</span>
+        </div>
+      {% endfor %}
+    </section>
+
+    <section class="compliance">
+      <div class="label">Compliance</div>
+      <p class="pretty">
+        Compiled from public disclosures and licensed press only. No inferred health,
+        political or family data. Brief is logged to the audit trail on export.
+      </p>
+    </section>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,17 @@
+<header class="header">
+  <div class="crumb">{{ crumb }}</div>
+
+  <form class="search" method="get" action="{{ url_for('web.prospects') }}">
+    <input type="search" name="q" value="{{ query|default('', true) }}"
+           placeholder="Search prospects, companies, filings…" aria-label="Search">
+    <span class="search-glyph"></span>
+  </form>
+
+  <div class="header-right">
+    <div class="ingest-pill">
+      <span class="dot"></span>
+      <span>Ingest live</span>
+    </div>
+    <a class="btn" href="{{ url_for('api.list_triggers') }}">Export</a>
+  </div>
+</header>

@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Triggers &amp; sources{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div class="eyebrow">Configuration</div>
+  <h1>Triggers &amp; sources</h1>
+  <p class="pretty">Define which events the desk listens for, and which publications the ingest is allowed to read.</p>
+</div>
+
+<div class="grid-2">
+  <section class="panel">
+    <div class="panel-head"><h2>Trigger categories</h2></div>
+    {% for tt in categories %}
+      <div class="row" style="display:flex;gap:14px;align-items:flex-start">
+        <div style="min-width:0;flex:1">
+          <div style="font-size:12.5px;font-weight:600">{{ tt.label }}</div>
+          <div class="pretty" style="margin-top:3px;font-size:11.5px;color:rgba(18,22,27,.55)">{{ tt.description }}</div>
+          <div class="mono" style="margin-top:6px;font-size:10px;color:rgba(18,22,27,.45)">{{ tt.volume }}</div>
+        </div>
+        <form method="post" action="{{ url_for('web.toggle_category', key=tt.key) }}" class="inline-form">
+          <button class="switch {% if tt.enabled %}is-on{% endif %}" type="submit"
+                  aria-label="Toggle {{ tt.label }}"><span></span></button>
+        </form>
+      </div>
+    {% endfor %}
+  </section>
+
+  <div class="stack">
+    <section class="panel scroll-x">
+      <div class="panel-head">
+        <span>Licensed sources</span>
+        <span class="mono" style="font-size:10.5px;color:rgba(18,22,27,.45)">{{ sources|length }} configured</span>
+      </div>
+      <div class="table-head source-cols">
+        <div>Publication</div><div>Region</div><div>Last pull</div><div style="text-align:right">Status</div>
+      </div>
+      {% for s in sources %}
+        <div class="grid-row source-cols" style="gap:12px;padding:11px 16px">
+          <div class="pretty" style="font-size:12.5px">{{ s.name }}</div>
+          <div style="font-size:11.5px;color:rgba(18,22,27,.6)">{{ s.region }}</div>
+          <div class="mono" style="font-size:10.5px;color:rgba(18,22,27,.5)">{{ s.last_pull }}</div>
+          <div style="text-align:right">
+            {% set tone = 'text-green' if s.status == 'Live' else ('text-amber' if s.status == 'Delayed' else 'text-muted') %}
+            <span class="status-pill {{ tone }}">{{ s.status }}</span>
+          </div>
+        </div>
+      {% endfor %}
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Ingest log</h2></div>
+      {% for l in logs %}
+        <div class="grid-row log-cols" style="padding:10px 16px">
+          <div class="mono" style="font-size:10.5px;color:rgba(18,22,27,.5)">{{ l.time }}</div>
+          <div class="pretty" style="font-size:12px;color:rgba(18,22,27,.72)">{{ l.text }}</div>
+        </div>
+      {% endfor %}
+    </section>
+  </div>
+</div>
+{% endblock %}

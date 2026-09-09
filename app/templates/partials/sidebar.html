@@ -1,0 +1,42 @@
+{% set nav_items = [
+  {'key': 'home',     'label': 'Desk',               'count': '',                        'dot': 'tone-blue',  'href': url_for('web.desk')},
+  {'key': 'brief',    'label': 'Prospect Brief',     'count': prospect_count,            'dot': 'tone-amber', 'href': url_for('web.prospects')},
+  {'key': 'triggers', 'label': 'Triggers',           'count': total_triggers,            'dot': 'tone-green', 'href': url_for('web.triggers')},
+  {'key': 'sources',  'label': 'Triggers & sources', 'count': '',                        'dot': 'tone-faint', 'href': url_for('web.sources')}
+] %}
+<aside class="aside">
+  <div class="brand">
+    <div class="brand-row">
+      <div class="brand-mark"></div>
+      <div class="brand-name">{{ app_name }}</div>
+    </div>
+    <div class="brand-sub">{{ app_subtitle }}</div>
+  </div>
+
+  <nav class="nav">
+    {% for item in nav_items %}
+      <a class="nav-item {% if nav_active == item.key %}is-active{% endif %}" href="{{ item.href }}">
+        <span class="nav-item-left">
+          <span class="nav-dot {{ item.dot }}"></span>
+          <span>{{ item.label }}</span>
+        </span>
+        <span class="nav-count">{{ item.count }}</span>
+      </a>
+    {% endfor %}
+  </nav>
+
+  <div class="aside-foot">
+    <div class="label">Coverage window</div>
+    <div class="coverage">
+      <span class="coverage-num">{{ coverage_days }}</span>
+      <span class="coverage-cap">days ingested</span>
+    </div>
+    <div class="who">
+      <div class="who-avatar">{{ user_initials }}</div>
+      <div style="min-width:0">
+        <div class="who-name">{{ user_short }}</div>
+        <div class="who-loc">{{ user_location }}</div>
+      </div>
+    </div>
+  </div>
+</aside>

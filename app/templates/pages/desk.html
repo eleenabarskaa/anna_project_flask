@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+{% block title %}Desk{% endblock %}
+
+{% block content %}
+<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:22px">
+  <div>
+    <div class="eyebrow">{{ now_label }}</div>
+    <h1 style="margin:8px 0 0;font-size:27px;font-weight:600;letter-spacing:-.02em">Good morning, {{ user_name.split()[0] }}</h1>
+    <p style="margin:6px 0 0;font-size:13.5px;color:rgba(18,22,27,.6);max-width:56ch" class="pretty">
+      {{ kpis[0].value }} new liquidity events matched your mandate overnight.
+      {{ kpis[1].value }} touch names already on your watchlist.
+    </p>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:7px">
+    <div class="label">Home layout</div>
+    <div class="seg">
+      {% for key, label in [('desk','Desk'), ('queue','Priority queue'), ('command','Command')] %}
+        <a href="{{ url_for('web.desk', variant=key) }}" class="{% if variant == key %}is-active{% endif %}">{{ label }}</a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="kpis">
+  {% for k in kpis %}
+    <div class="kpi">
+      <div class="label">{{ k.label }}</div>
+      <div class="kpi-value">
+        <strong>{{ k.value }}</strong>
+        <span class="text-{{ k.tone }}" style="font-size:11px">{{ k.delta }}</span>
+      </div>
+      <div class="kpi-note">{{ k.note }}</div>
+    </div>
+  {% endfor %}
+</div>
+
+{% if variant == 'desk' %}
+  <div class="grid-2">
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Last triggers</h2>
+        <a class="btn-link" href="{{ url_for('web.triggers') }}">All {{ total_triggers }} →</a>
+      </div>
+      {% for t in latest_triggers %}
+        <a class="row row-hover feed-row" style="text-decoration:none;color:inherit"
+           href="{{ url_for('web.triggers', event=t.id, category=t.type) }}">
+          <div>
+            <div class="mono" style="font-size:10.5px;color:rgba(18,22,27,.5)">{{ t.date.strftime('%m-%d') }}</div>
+            <div class="heat-bar tone-{{ t.heat }}"></div>
+          </div>
+          <div style="min-width:0">
+            <div style="font-size:13.5px;font-weight:600">{{ t.company }}</div>
+            <div class="pretty" style="margin-top:3px;font-size:12.5px;color:rgba(18,22,27,.62)">{{ t.headline }}</div>
+            <div style="margin-top:7px;display:flex;flex-wrap:wrap;gap:6px">
+              <span class="tag">{{ t.type }}</span>
+              <span class="tag">{{ t.source }}</span>
+            </div>
+          </div>
+          <div>
+            <div class="label">Principal</div>
+            <div style="margin-top:4px;font-size:12.5px">{{ t.principal }}</div>
+          </div>
+          <div class="feed-right" style="text-align:right">
+            <div class="mono" style="font-size:13px">{{ t.est }}</div>
+            <div style="margin-top:4px;font-size:10.5px;color:rgba(18,22,27,.5)">{{ t.confidence }} conf.</div>
+          </div>
+        </a>
+      {% endfor %}
+    </section>
+
+    <div class="stack">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Watchlist</h2>
+          <span class="mono" style="font-size:10.5px;color:rgba(18,22,27,.45)">{{ watchlist|length }} names</span>
+        </div>
+        {% for w in watchlist %}
+          <a class="row row-hover" style="display:flex;gap:12px;align-items:flex-start;text-decoration:none;color:inherit"
+             href="{{ url_for('web.prospect_detail', prospect_id=w.prospect_id) }}">
+            <div style="min-width:0;flex:1">
+              <div style="font-size:12.5px;font-weight:600">{{ w.name }}</div>
+              <div class="pretty" style="margin-top:3px;font-size:11.5px;color:rgba(18,22,27,.55)">{{ w.note }}</div>
+            </div>
+            <span class="flag tone-{{ w.tone }}">{{ w.flag }}</span>
+          </a>
+        {% endfor %}
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Today</h2>
+          <span class="mono" style="font-size:10.5px;color:rgba(18,22,27,.45)">
+            {{ tasks | rejectattr('done') | list | length }} open
+          </span>
+        </div>
+        {% for t in tasks %}
+          <div class="row" style="display:flex;gap:10px;align-items:flex-start">
+            <form method="post" action="{{ url_for('web.toggle_task', task_id=t.id) }}" class="inline-form">
+              <button class="btn btn-sm" type="submit" title="Toggle">{{ '✓' if t.done else '○' }}</button>
+            </form>
+            <div style="min-width:0">
+              <div style="font-size:12.5px;{% if t.done %}text-decoration:line-through;color:rgba(18,22,27,.4){% endif %}">{{ t.label }}</div>
+              <div style="margin-top:3px;font-size:11px;color:rgba(18,22,27,.5)">{{ t.meta }}</div>
+            </div>
+          </div>
+        {% endfor %}
+      </section>
+    </div>
+  </div>
+
+{% elif variant == 'queue' %}
+  <div class="grid-2">
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Priority queue · ranked by mandate fit</h2>
+        <span class="mono" style="font-size:10.5px;color:rgba(18,22,27,.45)">Recomputed 06:00 CET</span>
+      </div>
+      {% for p in queue %}
+        <div class="grid-row queue-cols" style="gap:16px;padding:15px 16px">
+          <div class="mono" style="font-size:19px;color:rgba(18,22,27,.3)">{{ '%02d' % loop.index }}</div>
+          <div style="min-width:0">
+            <div style="font-size:14px;font-weight:600">{{ p.name }}</div>
+            <div class="pretty" style="margin-top:3px;font-size:12.5px;color:rgba(18,22,27,.62)">{{ p.reason }}</div>
+          </div>
+          <div>
+            <div class="meter"><span class="tone-blue" style="width:{{ p.fit }}%"></span></div>
+            <div class="mono" style="margin-top:5px;font-size:10px;color:rgba(18,22,27,.5)">Fit {{ p.fit }} · {{ p.est }}</div>
+          </div>
+          <div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap">
+            <a class="btn btn-sm" href="{{ url_for('web.prospect_detail', prospect_id=p.id) }}">Brief</a>
+            <form method="post" action="{{ url_for('web.toggle_watch', prospect_id=p.id) }}" class="inline-form">
+              <button class="btn btn-sm" type="submit">{{ 'Watching' if p.watched else 'Watch' }}</button>
+            </form>
+          </div>
+        </div>
+      {% endfor %}
+    </section>
+
+    <section class="panel" style="padding:16px">
+      <h2 style="margin:0 0 12px;font-size:13px;font-weight:600">Queue composition</h2>
+      {% for c in composition %}
+        <div style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;font-size:11.5px;color:rgba(18,22,27,.65)">
+            <span>{{ c.label }}</span><span class="mono">{{ c.value }}</span>
+          </div>
+          <div class="meter" style="margin-top:5px"><span class="tone-{{ c.tone }}" style="width:{{ c.pct }}%"></span></div>
+        </div>
+      {% endfor %}
+      <div class="pretty" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line);font-size:11.5px;color:rgba(18,22,27,.55)">
+        Ranking uses public-source events only. No client data leaves the desk perimeter.
+      </div>
+    </section>
+  </div>
+
+{% else %}
+  <section class="command">
+    <div class="command-inner">
+      <div class="label">Ask the desk</div>
+      <form class="command-bar" method="get" action="{{ url_for('web.prospects') }}">
+        <input name="q" value="{{ query|default('', true) }}"
+               placeholder="e.g. founders who exited a Swiss industrial group since March">
+        <button type="submit">Build brief</button>
+      </form>
+      <div class="suggestions">
+        {% for s in suggestions %}
+          <a href="{{ url_for('web.prospects', q=s) }}">{{ s }}</a>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <div class="grid-2" style="margin-top:18px">
+    <section class="panel">
+      <div class="panel-head"><h2>Fresh triggers</h2></div>
+      {% for t in latest_triggers %}
+        <a class="row row-hover" style="display:block;text-decoration:none;color:inherit"
+           href="{{ url_for('web.triggers', event=t.id, category=t.type) }}">
+          <div style="display:flex;justify-content:space-between;gap:10px">
+            <span style="font-size:12.5px;font-weight:600">{{ t.company }}</span>
+            <span class="mono" style="font-size:10.5px;color:rgba(18,22,27,.45)">{{ t.date.strftime('%m-%d') }}</span>
+          </div>
+          <div class="pretty" style="margin-top:3px;font-size:12px;color:rgba(18,22,27,.6)">{{ t.headline }}</div>
+        </a>
+      {% endfor %}
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Recent briefs</h2></div>
+      {% for r in recent_briefs %}
+        <a class="row row-hover" style="display:flex;justify-content:space-between;gap:12px;text-decoration:none;color:inherit"
+           href="{{ url_for('web.prospect_detail', prospect_id=r.id) }}">
+          <div style="min-width:0">
+            <div style="font-size:12.5px;font-weight:600">{{ r.name }}</div>
+            <div style="margin-top:3px;font-size:11.5px;color:rgba(18,22,27,.55)">{{ r.meta }}</div>
+          </div>
+          <span class="mono" style="font-size:10.5px;color:rgba(18,22,27,.4)">{{ r.when }}</span>
+        </a>
+      {% endfor %}
+    </section>
+  </div>
+{% endif %}
+{% endblock %}

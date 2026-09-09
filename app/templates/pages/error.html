@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}{{ code }}{% endblock %}
+
+{% block content %}
+<div class="panel" style="padding:48px 32px;text-align:center">
+  <div class="mono" style="font-size:40px;color:rgba(18,22,27,.25)">{{ code }}</div>
+  <div style="margin-top:10px;font-size:14px">{{ message }}</div>
+  <a class="btn btn-md" style="margin-top:20px;display:inline-flex;align-items:center" href="{{ url_for('web.desk') }}">← На главную</a>
+</div>
+{% endblock %}
