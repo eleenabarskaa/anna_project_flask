@@ -290,3 +290,79 @@ def test_unreachable_source_shows_banner_not_500():
         resp = c.get("/prospects")
         assert resp.status_code == 200
         assert "Не удалось получить" in resp.get_data(as_text=True)
+
+
+# --- выгрузка в PDF ------------------------------------------------------
+
+def _pdf_text(data: bytes) -> str:
+    """Достаём текст из PDF без внешних зависимостей — через pdftotext,
+    если он есть; иначе проверяем только структуру файла."""
+    import shutil
+    import subprocess
+    import tempfile
+
+    if not shutil.which("pdftotext"):
+        return ""
+    with tempfile.NamedTemporaryFile(suffix=".pdf") as f:
+        f.write(data)
+        f.flush()
+        return subprocess.run(
+            ["pdftotext", f.name, "-"], capture_output=True, text=True, check=False
+        ).stdout
+
+
+def test_pdf_is_built_from_markdown():
+    from app.models import ResearchDocument
+    from app.services.pdf_export import build_pdf
+
+    data = build_pdf(row_to_document(ROWS[0]))
+    assert data.startswith(b"%PDF-") and len(data) > 5000
+
+    text = _pdf_text(data)
+    if text:  # pdftotext доступен — проверяем содержимое
+        assert "Miuccia Prada" in text
+        assert "Executive Assessment" in text
+        assert "Prada Holding S.p.A." in text        # строка таблицы
+        assert "IPO on HKEX in June 2011" in text    # пункт списка
+
+
+def test_pdf_handles_unicode_and_empty_markdown():
+    from app.models import ResearchDocument
+    from app.services.pdf_export import build_pdf
+
+    cyrillic = ResearchDocument(
+        id="x", name="Пример Компания",
+        full_markdown="# Заголовок\n\nТекст с €1.25 млрд.\n",
+    )
+    assert build_pdf(cyrillic).startswith(b"%PDF-")
+
+    empty = build_pdf(row_to_document(ROWS[1]))
+    assert empty.startswith(b"%PDF-")
+    text = _pdf_text(empty)
+    if text:
+        assert "Gruppo Turatti" in text
+
+
+def test_pdf_filename_is_slugified():
+    from app.services.pdf_export import pdf_filename
+
+    assert pdf_filename(row_to_document(ROWS[0])) == "miuccia-prada-brief.pdf"
+
+
+def test_download_pdf_route(client):
+    resp = client.get(f"/prospects/{ROWS[0]['id']}/pdf")
+    assert resp.status_code == 200
+    assert resp.mimetype == "application/pdf"
+    assert "miuccia-prada-brief.pdf" in resp.headers["Content-Disposition"]
+    assert resp.data.startswith(b"%PDF-")
+
+
+def test_download_pdf_404(client):
+    assert client.get("/prospects/00000000-0000-4000-8000-000000000000/pdf").status_code == 404
+
+
+def test_detail_page_offers_pdf_not_json(client):
+    body = client.get(f"/prospects/{ROWS[0]['id']}").get_data(as_text=True)
+    assert "Download PDF" in body
+    assert "Export JSON" not in body
+    assert f"/prospects/{ROWS[0]['id']}/pdf" in body

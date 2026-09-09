@@ -519,7 +519,7 @@ input, select, button { font-family: inherit; }
 .brief-body { min-width: 0; }
 
 /* Стили markdown-содержимого — та же типографика, что у остальных панелей */
-.markdown { padding: 26px 30px 32px; max-width: 78ch; }
+.markdown { padding: 26px 30px 32px; max-width: fit-content; }
 .markdown > *:first-child { margin-top: 0; }
 .markdown h1 { font-size: 22px; font-weight: 600; letter-spacing: -.015em; margin: 0 0 6px; }
 .markdown h2 {

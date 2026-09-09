@@ -12,6 +12,9 @@ python-dateutil>=2.9
 markdown>=3.5
 bleach>=6.1
 
+# Выгрузка брифа в PDF (кнопка Download PDF)
+reportlab>=4.0
+
 # --- добавим при подключении прямого доступа к БД ---
 # SQLAlchemy>=2.0
 # psycopg[binary]>=3.1

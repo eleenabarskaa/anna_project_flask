@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from io import BytesIO
+
 from flask import (
     Blueprint,
     abort,
@@ -9,6 +11,7 @@ from flask import (
     redirect,
     render_template,
     request,
+    send_file,
     url_for,
 )
 
@@ -72,6 +75,25 @@ def prospect_detail(document_id: str):
         nav_active="brief",
         crumb="Dossier · Prospect brief",
         **payload,
+    )
+
+
+@bp.get("/prospects/<document_id>/pdf")
+def prospect_pdf(document_id: str):
+    """Скачивание брифа в PDF — то же содержимое, что на странице."""
+    from app.services.pdf_export import build_pdf, pdf_filename
+
+    payload = service().document(document_id)
+    if payload is None or payload["document"] is None:
+        abort(404)
+
+    document = payload["document"]
+    return send_file(
+        BytesIO(build_pdf(document)),
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=pdf_filename(document),
+        max_age=0,
     )
 
 
