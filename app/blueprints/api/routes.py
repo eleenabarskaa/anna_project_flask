@@ -165,3 +165,61 @@ def toggle_category(key: str):
 def ingest_logs():
     rows = current_app.repos.sources.logs()  # type: ignore[attr-defined]
     return jsonify(items=[log.to_dict() for log in rows])
+
+
+# --- Сканирование источников (кнопка Find triggers) ----------------------
+
+@bp.get("/scan/<job_id>")
+def scan_status(job_id: str):
+    """Статус фоновой задачи: стадия, лог прогресса, найдено/добавлено."""
+    from app.services.scanner import registry as scan_registry
+
+    job = scan_registry.get(job_id)
+    if job is None:
+        return jsonify(error="not_found", message=f"scan job {job_id}"), 404
+    return jsonify(job.to_dict())
+
+
+@bp.post("/scan")
+def scan_start():
+    """Запуск сканирования из API: {"category": "...", "months": 3}."""
+    from app.scraping import sources as scraping_sources
+    from app.services.scanner import ScanService
+    from app.services.scanner import registry as scan_registry
+
+    running = scan_registry.running()
+    if running is not None:
+        return jsonify(error="already_running", job=running.to_dict()), 409
+
+    body = request.get_json(silent=True) or {}
+    category_key = body.get("category", "")
+    if not scraping_sources.is_known_category(category_key):
+        return jsonify(
+            error="unknown_category",
+            message="Допустимые значения: " + ", ".join(k for _, k in scraping_sources.CATEGORIES),
+        ), 400
+
+    months = max(1, min(12, int(body.get("months") or current_app.config["SCAN_DEFAULT_MONTHS"])))
+    service = ScanService(dict(current_app.config), job_repo=current_app.repos.jobs)
+    job = service.start(
+        category_key=category_key,
+        category_label=scraping_sources.KEY_TO_LABEL.get(category_key, category_key),
+        months=months,
+    )
+    return jsonify(job.to_dict()), 202
+
+
+@bp.post("/scan/<job_id>/stop")
+def scan_stop(job_id: str):
+    from app.services.scanner import registry as scan_registry
+
+    if not scan_registry.cancel(job_id):
+        return jsonify(error="not_running", message=f"scan job {job_id}"), 409
+    return jsonify(scan_registry.get(job_id).to_dict())
+
+
+@bp.get("/scan/categories")
+def scan_categories():
+    from app.scraping import sources as scraping_sources
+
+    return jsonify(items=[{"label": label, "key": key} for label, key in scraping_sources.CATEGORIES])

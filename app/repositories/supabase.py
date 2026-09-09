@@ -204,6 +204,9 @@ class SupabaseTriggerRepository:
         seen = {(r.get("trigger_type") or "").strip() for r in rows}
         return sorted(t for t in seen if t)
 
+    def refresh_hint(self) -> None:
+        """PostgREST не кэширует — метод оставлен для симметрии с memory-версией."""
+
     def _query(self, *, category: str | None, limit: int | None, offset: int, with_count: bool):
         params = {"select": "*", "order": "event_date.desc,created_at.desc"}
         if category and category != "All categories":
@@ -215,3 +218,25 @@ class SupabaseTriggerRepository:
             limit=limit,
             with_count=with_count,
         )
+
+
+class SupabaseJobRepository:
+    """Чтение таблицы `trigger_jobs`, которую наполняет workflow в n8n.
+
+    Строка задачи: {id, status: running|done|error, inserted_count, error}.
+    """
+
+    def __init__(self, client: PostgrestClient, table: str = "trigger_jobs") -> None:
+        self.client = client
+        self.table = table
+
+    def get(self, job_id: str) -> dict | None:
+        rows, _ = self.client.select(
+            self.table,
+            params={
+                "select": "status,inserted_count,error",
+                "id": f"eq.{job_id}",
+                "limit": "1",
+            },
+        )
+        return rows[0] if rows else None

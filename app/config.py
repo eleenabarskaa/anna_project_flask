@@ -43,6 +43,16 @@ def build_config(name: str | None = None) -> dict[str, Any]:
         "SUPABASE_URL": os.getenv("SUPABASE_URL"),
         "SUPABASE_SECRET_KEY": os.getenv("SUPABASE_SECRET_KEY"),
         "SUPABASE_TRIGGERS_TABLE": os.getenv("SUPABASE_TRIGGERS_TABLE", "triggers"),
+        "SUPABASE_TRIGGER_JOBS_TABLE": os.getenv("SUPABASE_TRIGGER_JOBS_TABLE", "trigger_jobs"),
+
+        # --- Поиск триггеров (кнопка Find triggers) ---------------------
+        # Вебхук n8n: принимает собранные статьи, гоняет LLM-классификацию
+        # и пишет результат в таблицы triggers / trigger_jobs.
+        "N8N_TRIGGERS_SCAN_WEBHOOK_URL": os.getenv("N8N_TRIGGERS_SCAN_WEBHOOK_URL"),
+        "N8N_WEBHOOK_TIMEOUT": _int("N8N_WEBHOOK_TIMEOUT", 15),
+        "SCAN_POLL_TIMEOUT": _int("SCAN_POLL_TIMEOUT", 300),
+        "SCAN_POLL_INTERVAL": _int("SCAN_POLL_INTERVAL", 3),
+        "SCAN_DEFAULT_MONTHS": _int("SCAN_DEFAULT_MONTHS", 3),
 
         # --- заготовки под будущие подключения --------------------------
         "DATABASE_URL": os.getenv("DATABASE_URL"),

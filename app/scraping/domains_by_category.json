@@ -1,0 +1,160 @@
+{
+  "Family Office": {
+    "domains": [
+      "forbes.it",
+      "www.ecodibergamo.it"
+    ],
+    "known_urls": [
+      "https://www.ecodibergamo.it/stories/premium/economia/radicigroup-accordo-chiuso-con-lone-star-la-chimica-passa-al-fondo-usa-nasce-o_3827789_11/",
+      "https://forbes.it/2026/02/23/lingegnere-del-cambiamento-filippo-ghirelli-tra-intelligenza-artificiale-ed-efficienza-energetica"
+    ]
+  },
+  "IPO / Listing": {
+    "domains": [
+      "en.ilsole24ore.com",
+      "www.borsaitaliana.it",
+      "www.marketscreener.com",
+      "www.siracusanews.it",
+      "www.t24economia.it"
+    ],
+    "known_urls": [
+      "https://www.borsaitaliana.it/borsa/notizie/teleborsa/finanza/ipo-guidotti-ships-offerta-aumentata-a-65-milioni-di-euro-con-forte-interesse-da-investitori-149_2026-07-22_TLB.html",
+      "https://en.ilsole24ore.com/art/alia-mentis-surges-35-per-cent-on-its-euronext-growth-debut-AIR8gUvD",
+      "https://www.marketscreener.com/news/first-point-to-debut-on-egm-on-july-27-after-128-1m-ipo-ce7f51dede8ef426",
+      "https://www.siracusanews.it/da-melilli-a-piazza-affari-dipietro-group-si-quota-in-borsa-debutto-col-botto-127/",
+      "https://www.t24economia.it/finanza/la-fiorentina-giunti-psychometrics-porta-in-borsa-i-suoi-test-psicologici"
+    ]
+  },
+  "M&A / Liquidity event": {
+    "domains": [
+      "askanews.it",
+      "bebeez.it",
+      "esgnews.it",
+      "financecommunity.it",
+      "it.elis.com",
+      "it.investing.com",
+      "www.ansa.it",
+      "www.borsaitaliana.it",
+      "www.ilfattoquotidiano.it",
+      "www.lanazione.it",
+      "www.milanofinanza.it",
+      "www.zawya.com"
+    ],
+    "known_urls": [
+      "https://esgnews.it/finanza/private-equity/algebris-green-transition-fund-esapro-acquisisce-la-quota-di-maggioranza-di-ren-electron/",
+      "https://www.borsaitaliana.it/borsa/notizie/radiocor/economia/dettaglio/gsa-acquisisce-70-ats-e-cresce-in-security-management-grandi-eventi-nRC_22052026_1454_454114609.html",
+      "https://www.zawya.com/en/economy/gcc/edge-group-to-acquire-cmd-a-top-tier-italian-engine-firm-rrf6z4jd",
+      "https://www.milanofinanza.it/news/arrow-global-acquisisce-borio-mangiarotti-la-storica-societa-immobiliare-della-famiglia-de-albertis-202607161222384310",
+      "https://www.ansa.it/lombardia/notizie/2026/03/24/our-group-ruffini-entra-al-40-nelle-attivita-famiglia-cerea_b70f2ed4-648a-45d9-8ecf-66f60ff1191b.html",
+      "https://bebeez.it/private-equity/missoni-fsi-sale-al-73-ed-entra-col-27-katjes-international-con-call-option-per-diventare-azionista-di-maggioranza-in-futuro/",
+      "https://www.milanofinanza.it/news/banca-investis-stringe-accordo-con-sfem-per-la-fusione-di-arsenale-re-sgr-in-symphonia-sgrbanca-investis-202601141444542832",
+      "https://www.milanofinanza.it/news/feltrinelli-vende-palazzo-esedra-a-roma-202601142110387377",
+      "https://it.elis.com/it/gruppo/newsroom/news/il-gruppo-elis-acquisisce-dodo-srl-e-rafforza-la-propria-presenza-nel-pest",
+      "https://it.investing.com/news/insider-trading-news/piero-ferrari-acquista-azioni-ferretti-per-61-milioni-di-euro-tramite-opa-93CH-3310393",
+      "https://bebeez.it/private-equity/ac-monza-fininvest-cede-l80-alla-statunitense-beckett-layne-ventures-uscita-completa-entro-giugno-2026-galliani-lascia-la-societa/",
+      "https://bebeez.it/private-equity/la-famiglia-recordati-conferma-le-trattative-cvc-sulla-cessione-del-controllo-titolo-vola/",
+      "https://bebeez.it/private-equity/e-ufficiale-gedi-passa-ai-greci-di-k-group-con-la-cessione-da-parte-di-exor-la-famiglia-agnelli-esce-dalleditoria-dopo-100-anni-deal-da-100-mln-in-su/",
+      "https://askanews.it/2026/08/04/ver-capital-sigla-laccordo-per-il-controllo-di-pieralisi-campione-globale-del-made-in-italy/",
+      "https://www.ilfattoquotidiano.it/2026/06/30/tirreno-vendita-sae-olivetti-rason-notizie/8434591/",
+      "https://bebeez.it/private-equity/arnaldo-caprai-oaktree-vende-ad-angelini-wines-estates-neo-socio-di-maggioranza-esce-arianna-caprai-rimane-marco-come-presidente-e-ad/",
+      "https://bebeez.it/private-equity/fondo-italiano-dinvestimento-sgr-rileva-oltre-il-65-di-alimenta-produzioni-da-fondatore-valter-baldacci-e-management-ev-fra-i-50-e-i-150-mln/",
+      "https://financecommunity.it/deutsche-bank-al-fianco-della-famiglia-franzini-nella-cessione-di-i-vet-a-vimian-group/",
+      "https://www.milanofinanza.it/news/21-invest-esce-dalla-pharma-sifi-e-incassa-250-milioni-di-euro-202506110159164700",
+      "https://www.lanazione.it/lucca/cronaca/azzurra-capital-in-lucart-accordo-per-la-crescita-c341709f"
+    ]
+  },
+  "PE Exit": {
+    "domains": [
+      "bebeez.eu",
+      "bebeez.it",
+      "fagioli.com",
+      "montenapodaily.com",
+      "realdeals.eu.com",
+      "surveye.it",
+      "www.ansa.it",
+      "www.ardian.com",
+      "www.borsaitaliana.it",
+      "www.eosimgroup.com",
+      "www.igisgr.it",
+      "www.ilsettempedano.it",
+      "www.leadersleague.com",
+      "www.messaggeroveneto.it",
+      "www.milanofinanza.it",
+      "www.officinastellare.com",
+      "www.watermagazine.co.uk"
+    ],
+    "known_urls": [
+      "https://fagioli.com/en/post.php?num=17",
+      "https://www.ansa.it/sito/notizie/topnews/2026/05/16/editoriale-nazionale-passa-a-lmdv-chiusa-loperazione-con-monrif_5215bb2c-c2e0-4ba3-9ed2-0bda4d24575b.html",
+      "https://realdeals.eu.com/article/ambienta-acquires-majority-stake-in-lighting-group-disano",
+      "https://www.borsaitaliana.it/borsa/notizie/radiocor/finanza/dettaglio/reway-rinova-bidco-perfeziona-acquisto-8338-lancia-opa-su-1662-nRC_31072026_0930_212201366.html",
+      "https://www.leadersleague.com/en/news/protos-acquires-italian-engineering-firm-hydea-to-expand-advisory-division",
+      "https://bebeez.eu/2026/05/04/italys-private-equity-weekly-roundup-news-from-nexi-cvc-cdp-hellman-friedman-advent-international-bain-capital-clessidra-and-more/",
+      "https://bebeez.eu/2026/05/04/italys-private-equity-weekly-roundup-news-from-nexi-cvc-cdp-hellman-friedman-advent-international-bain-capital-clessidra-and-more/",
+      "https://montenapodaily.com/en/2026/05/06/theorikon-industrial-fund-acquisisce-una-quota-in-bisazza/",
+      "https://www.milanofinanza.it/news/orange-palestre-italiane-acquisisce-getfit-nasce-un-gruppo-da-55-milioni-di-ricavi-e-110-mila-202607271234212705",
+      "https://www.officinastellare.com/2026/07/20/officina-stellare-expands-its-technological-footprint-with-the-acquisition-of-mavel/",
+      "https://bebeez.it/private-equity/anemos-holding-pe-di-paolo-basilico-investe-20-mln-di-euro-nei-taralli-di-terre-di-puglia-amundi-co-finanzia/",
+      "https://www.leadersleague.com/en/news/metrika-ii-acquires-majority-stake-in-proteg-italian-circular-economy-specialist",
+      "https://www.borsaitaliana.it/borsa/notizie/radiocor/economia/dettaglio/gruppo-everest-acquisisce-riva-impianti-e-elettrica-ravasio-nRC_22072026_1437_427183381.html",
+      "https://www.messaggeroveneto.it/cronaca/coram-entra-nel-gruppo-bianalisi-nasce-un-nuovo-polo-della-sanita-integrata-in-friuli-venezia-giulia-wzjqrlc5",
+      "https://www.ilsettempedano.it/2026/07/22/la-iamet-holding-swiss-merchant-capital-rileva-lazienda-tormatic/",
+      "https://www.ardian.com/news-insights/press-releases/ardian-signs-agreement-acquire-majority-stake-casaforte-italys-leading",
+      "https://www.watermagazine.co.uk/2026/04/22/ambienta-invests-in-p-i-eco-a-leading-global-provider-of-industrial-water-treatment-and-recycling-solutions/",
+      "https://surveye.it/2026/02/13/comunicato-stampa-surveye-axitea-febbraio-2026/",
+      "https://www.eosimgroup.com/eos-im-acquires-control-compton-industriale-italian-leader-circular-economy-and-pioneer-electrical",
+      "https://www.igisgr.it/meter-s-p-a-has-acquired-control-of-the-colzani-ingranaggi-s-r-l-group/"
+    ]
+  },
+  "Real Estate": {
+    "domains": [
+      "bebeez.eu",
+      "bebeez.it",
+      "realestate.pambianconews.com",
+      "www.affaritaliani.it",
+      "www.ansa.it",
+      "www.ilfattoquotidiano.it",
+      "www.milanofinanza.it"
+    ],
+    "known_urls": [
+      "https://www.ilfattoquotidiano.it/2026/06/24/villa-certosa-venduta-alla-famiglia-reale-del-qatar-al-thani-assegno-da-350-milioni-di-euro-per-la-famiglia-berlusconi-i-dettagli-dellaffare-immobiliare-in-costa-smeralda/8428646/",
+      "https://bebeez.eu/2026/06/26/italys-real-estate-weekly-round-up-news-from-villa-certosa-immobiliare-idra-fininvest-constellation-hotels-holding-and-more/",
+      "https://www.milanofinanza.it/news/hotel-gruppo-ginobbi-acquisisce-palazzo-scanderbeg-a-roma-per-24-milioni-202604141657388578",
+      "https://www.affaritaliani.it/milano/milano-fondo-mi-to-real-estate-50-milioni-due-immobili-via-vivaio-via-paracelso.html",
+      "https://bebeez.it/real-estate-2/gallerie-commerciali-bennet-acquisisce-un-retail-park-da-36-000-mq-in-viale-corsica-a-milano/",
+      "https://bebeez.it/real-estate-2/castello-sgr-tramite-la-piattaforma-hospitality-italian-infrastructure-platform-acquisisce-il-calampiso-resort-in-sicilia/",
+      "https://www.milanofinanza.it/news/covivio-punta-su-quattro-hotel-a-4-stelle-in-centro-a-milano-il-portafoglio-vale-217-milioni-202604151013575225",
+      "https://www.ansa.it/sito/notizie/economia/2026/04/15/arcus-real-estate-percassi-punta-100-milioni-su-roma-outlet-village_de8b6e7d-c85e-4a97-afb1-53346e1305a4.html",
+      "https://bebeez.it/real-estate-2/room00-next-gen-hospitality-compra-il-mecenate-palace-hotel-di-roma-in-un-deal-da-12-mln-euro/",
+      "https://www.affaritaliani.it/milano/milano-palazzo-taverna-venduto-neto-affitto-galliani-1001614.html",
+      "https://www.ansa.it/sito/notizie/cronaca/2026/03/25/villa-storica-davanti-allisola-di-tavolara-venduta-a-10-milioni-di-euro_aea6061b-ca67-4e04-8a0b-ebed2a367af7.html",
+      "https://realestate.pambianconews.com/2026/07/22/a-milano-ceduto-a-bizzipartners-palazzo-di-via-cappuccini/",
+      "https://www.milanofinanza.it/news/arrow-global-acquisisce-borio-mangiarotti-la-storica-societa-immobiliare-della-famiglia-de-albertis-202607161222384310"
+    ]
+  },
+  "Succession / Leadership transition": {
+    "domains": [
+      "fashionunited.com",
+      "pressmare.it",
+      "qz.com",
+      "www.borsaitaliana.it",
+      "www.businesswire.com",
+      "www.economymagazine.it",
+      "www.foodaffairs.it",
+      "www.ilsole24ore.com",
+      "www.milanofinanza.it"
+    ],
+    "known_urls": [
+      "https://www.businesswire.com/news/home/20251124436171/en/Ermenegildo-Zegna-Group-Prepares-for-the-Future-with-New-Leadership-Structure",
+      "https://www.borsaitaliana.it/borsa/notizie/teleborsa/finanza/cucinelli-ok-da-soci-a-bilancio-e-dividendo-di-104-euro-nominato-nuovo-cda-235_2026-04-23_TLB.html",
+      "https://www.businesswire.com/news/home/20260520447292/en/Chiesi-Group-Announces-New-Chair-and-Vice-Chair",
+      "https://fashionunited.com/news/people/bartolomeo-rongone-new-ceo-of-moncler-from-april-first/2026012070130",
+      "https://www.foodaffairs.it/2026/06/03/campari-la-famiglia-garavoglia-avvia-il-passaggio-generazionale-nella-holding-di-controllo/",
+      "https://www.ilsole24ore.com/art/pirelli-assemblea-vince-lista-camfinmtp-tronchetti-la-presidenza-AIiN2xrD",
+      "https://qz.com/essilorluxottica-del-vecchio-heir-sibling-buyout-delfin-042726",
+      "https://www.milanofinanza.it/news/tutti-i-poteri-ad-alessandro-benetton-nelle-carte-della-holding-ricerca-il-passo-indietro-del-patron-202601232125029506",
+      "https://www.economymagazine.it/mundys-cambio-al-vertice-alessandro-benetton-prende-il-timone-mangoni-resta-alla-guida-operativa/",
+      "https://pressmare.it/it/comunicazione/press-mare/2026-05-14/stassi-anastassov-ceo-ferretti-group-presidenza-tan-ning-89991"
+    ]
+  }
+}

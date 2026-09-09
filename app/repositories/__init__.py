@@ -41,7 +41,11 @@ class Repositories:
         self.desk = InMemoryDeskRepository()
 
         if backend == "supabase":
-            from app.repositories.supabase import PostgrestClient, SupabaseTriggerRepository
+            from app.repositories.supabase import (
+                PostgrestClient,
+                SupabaseJobRepository,
+                SupabaseTriggerRepository,
+            )
 
             client = PostgrestClient(
                 base_url=self.settings.get("SUPABASE_URL") or "",
@@ -51,8 +55,13 @@ class Repositories:
             self.triggers = SupabaseTriggerRepository(
                 client, table=self.settings.get("SUPABASE_TRIGGERS_TABLE", "triggers")
             )
+            # Таблица trigger_jobs — статус фоновой задачи классификации в n8n
+            self.jobs = SupabaseJobRepository(
+                client, table=self.settings.get("SUPABASE_TRIGGER_JOBS_TABLE", "trigger_jobs")
+            )
         else:
             self.triggers = InMemoryTriggerRepository()
+            self.jobs = None
 
 
 def build_repositories(config: dict[str, Any]) -> Repositories:

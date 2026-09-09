@@ -12,6 +12,75 @@
   </div>
 </div>
 
+{# --- Find triggers: сканирование источников по требованию ---------------- #}
+{% set running = scan_job and not scan_job.finished %}
+<section class="panel scan" style="margin-bottom:16px">
+  <div class="panel-head">
+    <h2>Find triggers</h2>
+    <span class="mono" style="font-size:10.5px;color:rgba(18,22,27,.45)">on demand · not live</span>
+  </div>
+
+  <div class="panel-body" style="padding:14px 16px">
+    <p class="pretty muted" style="margin:0 0 12px;font-size:12.5px">
+      Обходит источники, настроенные для выбранной категории, и отправляет найденные
+      статьи в n8n на классификацию и запись в базу.
+    </p>
+
+    <form method="post" action="{{ url_for('web.start_scan') }}"
+          style="display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end">
+      <div style="min-width:240px;flex:1">
+        <div class="label" style="margin-bottom:6px">Trigger category</div>
+        <select name="scan_category" {{ 'disabled' if running }}
+                style="width:100%;height:32px;border:1px solid rgba(18,22,27,.16);background:#fff;font-size:12.5px;padding:0 8px;outline:none">
+          {% for label, key in scan_categories %}
+            <option value="{{ key }}" {% if scan_job and scan_job.category_key == key %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="min-width:220px">
+        <div class="label" style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <span>Look-back period</span>
+          <span id="scanMonthsLabel">{{ (scan_job.months if scan_job else scan_months) }} mo</span>
+        </div>
+        <input type="range" name="scan_months" min="1" max="6" {{ 'disabled' if running }}
+               value="{{ scan_job.months if scan_job else scan_months }}"
+               oninput="document.getElementById('scanMonthsLabel').textContent = this.value + ' mo'"
+               style="width:100%;accent-color:var(--blue)">
+      </div>
+
+      <button class="btn btn-primary btn-md" type="submit" {{ 'disabled' if running }}>
+        {{ 'Scanning…' if running else 'Find triggers' }}
+      </button>
+    </form>
+
+    {% if scan_job %}
+      <div id="scanStatus" class="scan-status" data-job="{{ scan_job.id }}" data-finished="{{ '1' if scan_job.finished else '0' }}">
+        <div class="scan-head">
+          <span id="scanDot" class="scan-dot {{ 'is-running' if running else scan_job.status }}"></span>
+          <span id="scanStage">{{ scan_job.stage }}</span>
+          {% if running %}
+            <form method="post" action="{{ url_for('web.stop_scan', job_id=scan_job.id) }}" class="inline-form" style="margin-left:auto">
+              <button class="btn btn-sm" type="submit">Stop</button>
+            </form>
+          {% endif %}
+        </div>
+
+        <pre id="scanLog" class="scan-log">{{ scan_job.log | join('\n') }}</pre>
+
+        <div id="scanResult" class="scan-result" {% if scan_job.finished %}{% else %}hidden{% endif %}>
+          {% if scan_job.error %}
+            <span class="scan-error">{{ scan_job.error }}</span>
+          {% else %}
+            Found {{ scan_job.found if scan_job.found is not none else 0 }} article(s) ·
+            <strong>Added {{ scan_job.added if scan_job.added is not none else 0 }} new trigger(s).</strong>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</section>
+
 <form method="get" action="{{ url_for('web.triggers') }}" class="panel"
       style="padding:14px 16px;margin-bottom:16px;display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end">
   <div style="min-width:210px">
@@ -121,4 +190,41 @@
     {% endif %}
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{% if scan_job and not scan_job.finished %}
+<script>
+// Опрос фоновой задачи сканирования: обновляем стадию и лог, а когда n8n
+// завершит классификацию — перезагружаем страницу, чтобы показать новые строки.
+(function () {
+  var box = document.getElementById('scanStatus');
+  if (!box) return;
+
+  var jobId = box.dataset.job;
+  var stage = document.getElementById('scanStage');
+  var log = document.getElementById('scanLog');
+  var url = {{ url_for('api.scan_status', job_id='__ID__') | tojson }}.replace('__ID__', jobId);
+
+  function tick() {
+    fetch(url, { headers: { 'Accept': 'application/json' } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (job) {
+        if (!job) return;
+        stage.textContent = job.stage;
+        log.textContent = job.log.join('\n');
+        log.scrollTop = log.scrollHeight;
+        if (job.finished) {
+          window.location.reload();   // перечитываем список триггеров из базы
+          return;
+        }
+        setTimeout(tick, 2000);
+      })
+      .catch(function () { setTimeout(tick, 5000); });
+  }
+
+  setTimeout(tick, 1500);
+})();
+</script>
+{% endif %}
 {% endblock %}

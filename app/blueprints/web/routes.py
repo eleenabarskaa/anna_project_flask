@@ -13,7 +13,10 @@ from flask import (
 )
 
 from app.repositories import seed_data
+from app.scraping import sources as scraping_sources
 from app.services.desk import DeskService
+from app.services.scanner import ScanService
+from app.services.scanner import registry as scan_registry
 
 bp = Blueprint("web", __name__, template_folder="../../templates")
 
@@ -91,6 +94,9 @@ def triggers():
         page=max(1, page),
         per_page=current_app.config["TRIGGERS_PER_PAGE"],
     )
+    job_id = request.args.get("job")
+    job = scan_registry.get(job_id) if job_id else scan_registry.running()
+
     return render_template(
         "pages/triggers.html",
         nav_active="triggers",
@@ -98,8 +104,38 @@ def triggers():
         category=category,
         lookback=lookback,
         open_id=open_id,
+        scan_categories=scraping_sources.CATEGORIES,
+        scan_months=current_app.config["SCAN_DEFAULT_MONTHS"],
+        scan_job=job.to_dict() if job else None,
         **data,  # rows, total, page, pages, per_page, categories, data_error
     )
+
+
+@bp.post("/triggers/scan")
+def start_scan():
+    """Кнопка «Find triggers»: запускает сканирование в фоне и уводит на
+    страницу с этой задачей — прогресс подтягивается опросом API."""
+    if scan_registry.running():
+        return redirect(url_for("web.triggers"))  # одно сканирование за раз
+
+    category_key = request.form.get("scan_category", "")
+    if not scraping_sources.is_known_category(category_key):
+        abort(400)
+    months = max(1, min(12, request.form.get("scan_months", type=int) or 3))
+
+    service = ScanService(dict(current_app.config), job_repo=current_app.repos.jobs)  # type: ignore[attr-defined]
+    job = service.start(
+        category_key=category_key,
+        category_label=scraping_sources.KEY_TO_LABEL.get(category_key, category_key),
+        months=months,
+    )
+    return redirect(url_for("web.triggers", job=job.id))
+
+
+@bp.post("/triggers/scan/<job_id>/stop")
+def stop_scan(job_id: str):
+    scan_registry.cancel(job_id)
+    return redirect(url_for("web.triggers", job=job_id))
 
 
 @bp.get("/sources")

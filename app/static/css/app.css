@@ -292,6 +292,53 @@ input, select, button { font-family: inherit; }
   margin-bottom: 18px;
 }
 
+/* --- Find triggers ----------------------------------------------------- */
+
+.scan-status {
+  margin-top: 14px;
+  border: 1px solid var(--line);
+  background: var(--panel-alt);
+}
+.scan-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 12.5px;
+}
+.scan-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+  background: rgba(18, 22, 27, 0.3);
+}
+.scan-dot.is-running { background: var(--blue); animation: pulseDot 1.4s infinite; }
+.scan-dot.done { background: var(--green); }
+.scan-dot.error { background: var(--amber); }
+.scan-dot.cancelled { background: rgba(18, 22, 27, 0.35); }
+
+.scan-log {
+  margin: 0;
+  padding: 10px 12px;
+  max-height: 190px;
+  overflow-y: auto;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.65;
+  color: rgba(18, 22, 27, 0.62);
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #fff;
+}
+.scan-result {
+  padding: 10px 12px;
+  border-top: 1px solid var(--line-soft);
+  font-size: 12.5px;
+}
+.scan-error { color: var(--amber); }
+
 /* --- KPI --------------------------------------------------------------- */
 
 .kpis {
