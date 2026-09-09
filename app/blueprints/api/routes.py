@@ -58,13 +58,45 @@ def get_trigger(trigger_id: str):
     return jsonify(_trigger_dict(trigger))
 
 
-# --- Prospects -----------------------------------------------------------
+# --- Prospect briefs (researched_documents) ------------------------------
 
 @bp.get("/prospects")
-def list_prospects():
+def list_documents():
+    """Список брифов. full_markdown в перечне не отдаётся — он объёмный."""
     query = request.args.get("q")
-    rows = service().search_prospects(query)
-    return jsonify(items=[p.to_dict() for p in rows], meta={"total": len(rows), "q": query})
+    page = max(1, request.args.get("page", 1, type=int))
+    per_page = request.args.get("per_page", current_app.config["DOCUMENTS_PER_PAGE"], type=int)
+
+    data = service().documents_page(query=query, page=page, per_page=per_page)
+    return jsonify(
+        items=[
+            {k: v for k, v in d.to_dict().items() if k != "full_markdown"}
+            for d in data["documents"]
+        ],
+        meta={
+            "total": data["total"],
+            "page": data["page"],
+            "pages": data["pages"],
+            "per_page": data["per_page"],
+            "q": query,
+        },
+    )
+
+
+@bp.get("/prospects/<document_id>")
+def get_document(document_id: str):
+    """Один бриф целиком: исходный markdown + отрендеренный HTML."""
+    payload = service().document(document_id)
+    if payload is None or payload["document"] is None:
+        return jsonify(error="not_found", message=f"document {document_id}"), 404
+
+    brief = payload["brief"]
+    return jsonify(
+        document=payload["document"].to_dict(),
+        html=str(brief.html),
+        toc=brief.toc,
+        word_count=brief.word_count,
+    )
 
 
 @bp.get("/prospects/queue")
@@ -73,18 +105,6 @@ def prospect_queue():
     return jsonify(
         items=[p.to_dict() for p in rows],
         composition=seed_data.QUEUE_COMPOSITION,
-    )
-
-
-@bp.get("/prospects/<prospect_id>")
-def get_prospect(prospect_id: str):
-    payload = service().dossier_for(prospect_id)
-    if payload is None:
-        return jsonify(error="not_found", message=f"prospect {prospect_id}"), 404
-    return jsonify(
-        prospect=payload["prospect"].to_dict(),
-        dossier=payload["dossier"].to_dict(),
-        enriched=payload["enriched"],
     )
 
 

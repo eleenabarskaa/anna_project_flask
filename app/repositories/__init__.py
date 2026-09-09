@@ -3,8 +3,8 @@
 Здесь выбирается конкретная реализация по `REPOSITORY_BACKEND`:
 
   memory    — всё на демо-данных из seed_data.py (по умолчанию)
-  supabase  — триггеры читаются из реальной таблицы Supabase,
-              остальные экраны пока остаются на демо-данных
+  supabase  — триггеры (`triggers`) и брифы (`researched_documents`)
+              читаются из Supabase; Desk-виджеты пока на демо-данных
 """
 
 from __future__ import annotations
@@ -13,6 +13,7 @@ from typing import Any
 
 from app.repositories.memory import (
     InMemoryDeskRepository,
+    InMemoryDocumentRepository,
     InMemoryDossierRepository,
     InMemoryProspectRepository,
     InMemorySourceRepository,
@@ -43,6 +44,7 @@ class Repositories:
         if backend == "supabase":
             from app.repositories.supabase import (
                 PostgrestClient,
+                SupabaseDocumentRepository,
                 SupabaseJobRepository,
                 SupabaseTriggerRepository,
             )
@@ -59,9 +61,15 @@ class Repositories:
             self.jobs = SupabaseJobRepository(
                 client, table=self.settings.get("SUPABASE_TRIGGER_JOBS_TABLE", "trigger_jobs")
             )
+            # Таблица researched_documents — готовые брифы для Prospect Brief
+            self.documents = SupabaseDocumentRepository(
+                client,
+                table=self.settings.get("SUPABASE_DOCUMENTS_TABLE", "researched_documents"),
+            )
         else:
             self.triggers = InMemoryTriggerRepository()
             self.jobs = None
+            self.documents = InMemoryDocumentRepository()
 
 
 def build_repositories(config: dict[str, Any]) -> Repositories:

@@ -20,8 +20,6 @@ def client():
         "/?variant=command",
         "/prospects",
         "/prospects?q=brunner",
-        "/prospects/p1",
-        "/prospects/p9",
         "/triggers",
         "/triggers?category=M%26A+%2F+Liquidity",
         "/triggers?event=t3",
@@ -34,20 +32,14 @@ def test_pages_render(client, path):
     assert resp.status_code == 200
 
 
-def test_unknown_prospect_404(client):
+def test_unknown_document_404(client):
     assert client.get("/prospects/nope").status_code == 404
 
 
-def test_detail_shows_dossier(client):
-    body = client.get("/prospects/p1").get_data(as_text=True)
+def test_brief_list_shows_documents(client):
+    body = client.get("/prospects").get_data(as_text=True)
     assert "Elisabeth Brunner" in body
-    assert "Verified facts" in body
-
-
-def test_detail_without_dossier_falls_back(client):
-    body = client.get("/prospects/p9").get_data(as_text=True)
-    assert "Nadia Perrin" in body
-    assert "has not been enriched yet" in body
+    assert "Vaduz Chemicals Holding" in body
 
 
 def test_search_filters(client):
@@ -59,9 +51,8 @@ def test_search_filters(client):
 # --- действия ------------------------------------------------------------
 
 def test_watch_toggle_roundtrip(client):
-    before = client.get("/api/v1/prospects/p1").get_json()["prospect"]["watched"]
-    client.post("/prospects/p1/watch")
-    after = client.get("/api/v1/prospects/p1").get_json()["prospect"]["watched"]
+    before = client.get("/api/v1/prospects/queue").get_json()["items"][0]["watched"]
+    after = client.post("/api/v1/prospects/p1/watch").get_json()["watched"]
     assert after is not before
 
 

@@ -78,7 +78,7 @@
         </div>
         {% for w in watchlist %}
           <a class="row row-hover" style="display:flex;gap:12px;align-items:flex-start;text-decoration:none;color:inherit"
-             href="{{ url_for('web.prospect_detail', prospect_id=w.prospect_id) }}">
+             href="{{ url_for('web.prospects', q=w.name) }}">
             <div style="min-width:0;flex:1">
               <div style="font-size:12.5px;font-weight:600">{{ w.name }}</div>
               <div class="pretty" style="margin-top:3px;font-size:11.5px;color:rgba(18,22,27,.55)">{{ w.note }}</div>
@@ -129,10 +129,7 @@
             <div class="mono" style="margin-top:5px;font-size:10px;color:rgba(18,22,27,.5)">Fit {{ p.fit }} · {{ p.est }}</div>
           </div>
           <div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap">
-            <a class="btn btn-sm" href="{{ url_for('web.prospect_detail', prospect_id=p.id) }}">Brief</a>
-            <form method="post" action="{{ url_for('web.toggle_watch', prospect_id=p.id) }}" class="inline-form">
-              <button class="btn btn-sm" type="submit">{{ 'Watching' if p.watched else 'Watch' }}</button>
-            </form>
+            <a class="btn btn-sm" href="{{ url_for('web.prospects', q=p.name) }}">Brief</a>
           </div>
         </div>
       {% endfor %}
@@ -190,7 +187,7 @@
       <div class="panel-head"><h2>Recent briefs</h2></div>
       {% for r in recent_briefs %}
         <a class="row row-hover" style="display:flex;justify-content:space-between;gap:12px;text-decoration:none;color:inherit"
-           href="{{ url_for('web.prospect_detail', prospect_id=r.id) }}">
+           href="{{ url_for('web.prospects', q=r.name) }}">
           <div style="min-width:0">
             <div style="font-size:12.5px;font-weight:600">{{ r.name }}</div>
             <div style="margin-top:3px;font-size:11.5px;color:rgba(18,22,27,.55)">{{ r.meta }}</div>

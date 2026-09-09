@@ -15,6 +15,7 @@ from app.models import (
     Dossier,
     IngestLogEntry,
     Prospect,
+    ResearchDocument,
     Source,
     Trigger,
     TriggerCategory,
@@ -39,6 +40,9 @@ class _Store:
         self.logs: list[IngestLogEntry] = copy.deepcopy(seed_data.INGEST_LOG)
         self.tasks: list[DeskTask] = copy.deepcopy(seed_data.DESK_TASKS)
         self.watchlist: list[WatchlistItem] = copy.deepcopy(seed_data.WATCHLIST)
+        self.documents: list[ResearchDocument] = [
+            ResearchDocument(**row) for row in copy.deepcopy(seed_data.RESEARCH_DOCUMENTS)
+        ]
 
 
 store = _Store()
@@ -143,3 +147,36 @@ class InMemoryDeskRepository:
 
     def watchlist(self) -> list[WatchlistItem]:
         return list(store.watchlist)
+
+
+class InMemoryDocumentRepository:
+    """Демо-версия researched_documents для backend=memory."""
+
+    def list(
+        self,
+        *,
+        query: str | None = None,
+        limit: int | None = None,
+        offset: int = 0,
+        with_count: bool = False,
+    ) -> tuple[list[ResearchDocument], int | None]:
+        rows = list(store.documents)
+        term = (query or "").strip().lower()
+        if term:
+            rows = [
+                d for d in rows
+                if term in d.name.lower()
+                or term in d.normalized_name.lower()
+                or term in d.source_query.lower()
+            ]
+        total = len(rows)
+        rows = rows[offset:]
+        if limit is not None:
+            rows = rows[:limit]
+        return rows, (total if with_count else None)
+
+    def get(self, document_id: str) -> ResearchDocument | None:
+        return next((d for d in store.documents if d.id == document_id), None)
+
+    def statuses(self) -> list[str]:
+        return sorted({d.status for d in store.documents if d.status})

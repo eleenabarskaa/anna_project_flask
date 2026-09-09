@@ -531,3 +531,71 @@ FILTER_CHIPS = [
 
 TOTAL_TRIGGERS = 292
 COVERAGE_DAYS = 92
+
+
+# --- researched_documents (демо для backend=memory) ----------------------
+
+_BRUNNER_MD = """# PROSPECT ENRICHMENT BRIEF
+## Public-Source Research | Switzerland
+
+**Prospect name:** Elisabeth Brunner
+**Role / relationship to company or group:** Chair and 41% shareholder, Helvetia Precision AG
+
+---
+
+## 1. Executive Assessment
+
+Brunner chairs a fourth-generation precision components maker in Winterthur and holds
+41% directly plus 6% through a foundation. The agreed sale of a 74% block to TML CV
+Holdings would be her first liquidity event.
+
+## 2. Group, Ownership & Governance
+
+| Entity | Role | Ownership | Source |
+|---|---|---|---|
+| Helvetia Precision AG | Operating company | 41.2% direct | SIX filing |
+| Brunner Stiftung | Family foundation, Zug | 6.0% | Commercial register |
+
+## 3. Liquidity History
+
+Signed 4 Sep, closing expected Q1 2027 subject to WEKO clearance. Cash consideration
+with a 15% deferred tranche.
+
+## 4. RM Preparation
+
+- Nine-month window between signing and closing — pre-transaction structuring is still open.
+- Deferred 15% tranche opens a conversation about staged liquidity planning.
+"""
+
+RESEARCH_DOCUMENTS = [
+    {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "name": "Elisabeth Brunner",
+        "normalized_name": "elisabeth brunner",
+        "document_type": "person",
+        "status": "completed",
+        "source_query": "find information about Elisabeth Brunner",
+        "researched_at": "2026-09-05 06:12:00+00",
+        "full_markdown": _BRUNNER_MD,
+    },
+    {
+        "id": "22222222-2222-4222-8222-222222222222",
+        "name": "Vaduz Chemicals Holding",
+        "normalized_name": "vaduz chemicals holding",
+        "document_type": "company",
+        "status": "completed",
+        "source_query": "find information about Vaduz Chemicals Holding",
+        "researched_at": "2026-09-03 08:05:00+00",
+        "full_markdown": "# PROSPECT ENRICHMENT BRIEF\n\n## 1. Executive Assessment\n\nIPO priced at the top of the range; two co-founders sold secondary lines.\n",
+    },
+    {
+        "id": "33333333-3333-4333-8333-333333333333",
+        "name": "Lorenzo Ferretti",
+        "normalized_name": "lorenzo ferretti",
+        "document_type": "person",
+        "status": "running",
+        "source_query": "find information about Lorenzo Ferretti",
+        "researched_at": None,
+        "full_markdown": "",
+    },
+]

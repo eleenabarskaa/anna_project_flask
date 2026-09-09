@@ -48,7 +48,39 @@ class DeskService:
             "coverage_days": seed_data.COVERAGE_DAYS,
         }
 
-    # --- Prospect brief --------------------------------------------------
+    # --- Prospect brief (researched_documents) ---------------------------
+
+    def documents_page(self, *, query: str | None, page: int, per_page: int) -> dict[str, Any]:
+        """Список готовых брифов из researched_documents."""
+        offset = (page - 1) * per_page
+
+        def fetch():
+            return self.repos.documents.list(
+                query=query, limit=per_page, offset=offset, with_count=True
+            )
+
+        (rows, total), error = self._safe(fetch, ([], 0))
+        total = total or 0
+        pages = max(1, -(-total // per_page))
+        return {
+            "documents": rows,
+            "total": total,
+            "page": min(page, pages),
+            "pages": pages,
+            "per_page": per_page,
+            "data_error": error,
+        }
+
+    def document(self, document_id: str):
+        """Один бриф; markdown рендерится в HTML с оглавлением."""
+        from app.services.markdown_render import render_brief
+
+        doc, error = self._safe(lambda: self.repos.documents.get(document_id), None)
+        if error:
+            return {"document": None, "brief": None, "data_error": error}
+        if doc is None:
+            return None
+        return {"document": doc, "brief": render_brief(doc.full_markdown), "data_error": None}
 
     def search_prospects(self, query: str | None) -> list[Prospect]:
         return self.repos.prospects.list(query=query)

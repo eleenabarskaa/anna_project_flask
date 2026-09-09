@@ -2,45 +2,74 @@
 {% block title %}Prospect Brief{% endblock %}
 
 {% block content %}
-<div class="page-head">
-  <div class="eyebrow">Dossier · public-source research</div>
-  <h1>Prospect Brief</h1>
+<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:18px">
+  <div>
+    <div class="eyebrow">Dossier · public-source research</div>
+    <h1 style="margin:8px 0 0;font-size:24px;font-weight:600;letter-spacing:-.015em">Prospect Brief</h1>
+  </div>
+  <div class="mono" style="font-size:11px;color:rgba(18,22,27,.5)">
+    {{ documents|length }} of {{ total }} briefs
+  </div>
 </div>
 
 <div class="panel" style="padding:16px;margin-bottom:18px">
   <form method="get" action="{{ url_for('web.prospects') }}" style="display:flex;gap:10px;flex-wrap:wrap">
-    <input name="q" value="{{ query }}" placeholder="Name, company, or filing reference"
+    <input name="q" value="{{ query }}" placeholder="Name, company, or research query"
            style="flex:1;min-width:240px;height:36px;padding:0 12px;border:1px solid rgba(18,22,27,.16);font-size:13px;outline:none">
     <button class="btn btn-primary btn-lg" type="submit">Search</button>
+    {% if query %}
+      <a class="btn btn-lg" href="{{ url_for('web.prospects') }}">Reset</a>
+    {% endif %}
   </form>
-  <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:7px;align-items:center">
-    <span class="label">Filters</span>
-    {% for chip in filter_chips %}
-      <span class="chip {% if loop.first %}is-active{% endif %}">{{ chip }}</span>
-    {% endfor %}
-  </div>
 </div>
 
 <div class="panel scroll-x">
-  <div class="table-head prospect-cols">
-    <div>Prospect</div><div>Trigger</div><div>Est. liquidity</div><div>Domicile</div>
-    <div style="text-align:right">Updated</div>
+  <div class="table-head brief-cols">
+    <div>Prospect</div><div>Research query</div><div>Type</div><div>Status</div>
+    <div style="text-align:right">Researched</div>
   </div>
 
-  {% for p in results %}
-    <a class="grid-row prospect-cols row-hover" style="text-decoration:none;color:inherit"
-       href="{{ url_for('web.prospect_detail', prospect_id=p.id) }}">
+  {% for d in documents %}
+    <a class="grid-row brief-cols row-hover" style="text-decoration:none;color:inherit"
+       href="{{ url_for('web.prospect_detail', document_id=d.id) }}">
       <div style="min-width:0">
-        <div style="font-size:13.5px;font-weight:600">{{ p.name }}</div>
-        <div style="margin-top:3px;font-size:11.5px;color:rgba(18,22,27,.55)">{{ p.role }}</div>
+        <div style="font-size:13.5px;font-weight:600">{{ d.name }}</div>
+        <div class="mono" style="margin-top:3px;font-size:10px;color:rgba(18,22,27,.4)">{{ d.id[:8] }}</div>
       </div>
-      <div class="pretty" style="font-size:12.5px;color:rgba(18,22,27,.65)">{{ p.trigger }}</div>
-      <div class="mono" style="font-size:12.5px">{{ p.est }}</div>
-      <div style="font-size:12px;color:rgba(18,22,27,.65)">{{ p.domicile }}</div>
-      <div class="mono" style="font-size:10.5px;color:rgba(18,22,27,.45);text-align:right">{{ p.updated }}</div>
+      <div class="pretty" style="font-size:12.5px;color:rgba(18,22,27,.65)">{{ d.source_query or '—' }}</div>
+      <div style="font-size:12px;color:rgba(18,22,27,.65)">{{ d.document_type or '—' }}</div>
+      <div>
+        {% set tone = 'text-green' if d.is_completed else 'text-amber' %}
+        <span class="status-pill {{ tone }}">{{ d.status or '—' }}</span>
+      </div>
+      <div class="mono" style="font-size:10.5px;color:rgba(18,22,27,.45);text-align:right">
+        {{ d.researched_at or '—' }}
+      </div>
     </a>
   {% else %}
-    <div class="row muted" style="padding:24px 16px">Ничего не найдено по запросу «{{ query }}».</div>
+    <div class="row muted" style="padding:24px 16px">
+      {% if query %}
+        Ничего не найдено по запросу «{{ query }}».
+      {% else %}
+        В таблице researched_documents пока нет записей.
+      {% endif %}
+    </div>
   {% endfor %}
+
+  {% if pages > 1 %}
+    <div class="pager">
+      {% if page > 1 %}
+        <a class="btn" href="{{ url_for('web.prospects', q=query, page=page-1) }}">← Previous</a>
+      {% else %}
+        <span class="btn" style="opacity:.4;pointer-events:none">← Previous</span>
+      {% endif %}
+      <div class="mono" style="font-size:11px;color:rgba(18,22,27,.5)">Page {{ page }} of {{ pages }}</div>
+      {% if page < pages %}
+        <a class="btn" href="{{ url_for('web.prospects', q=query, page=page+1) }}">Next →</a>
+      {% else %}
+        <span class="btn" style="opacity:.4;pointer-events:none">Next →</span>
+      {% endif %}
+    </div>
+  {% endif %}
 </div>
 {% endblock %}

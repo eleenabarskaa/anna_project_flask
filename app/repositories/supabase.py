@@ -21,7 +21,7 @@ import urllib.parse
 import urllib.request
 from datetime import date, datetime
 
-from app.models import Trigger
+from app.models import ResearchDocument, Trigger
 
 # «Acme SpA (bidder: Foo) (seller: Bar)» → отрезаем служебные скобки в конце
 _ROLE_SUFFIX = re.compile(r"\s*\((?:bidder|seller|buyer|acquirer)\s*:.*$", re.IGNORECASE)
@@ -240,3 +240,81 @@ class SupabaseJobRepository:
             },
         )
         return rows[0] if rows else None
+
+
+# --- researched_documents ------------------------------------------------
+
+def _researched_at(raw: str | None) -> str | None:
+    """'2026-08-16 15:41:43.6+00' → '16 Aug 2026'."""
+    if not raw:
+        return None
+    cleaned = raw.replace("Z", "+00:00").replace(" ", "T", 1)
+    try:
+        return datetime.fromisoformat(cleaned).strftime("%d %b %Y")
+    except ValueError:
+        return raw[:10]
+
+
+def row_to_document(row: dict) -> ResearchDocument:
+    return ResearchDocument(
+        id=str(row.get("id", "")),
+        name=(row.get("name") or "—").strip(),
+        normalized_name=(row.get("normalized_name") or "").strip(),
+        document_type=(row.get("document_type") or "").strip(),
+        status=(row.get("status") or "").strip(),
+        source_query=(row.get("source_query") or "").strip(),
+        researched_at=_researched_at(row.get("researched_at")),
+        full_markdown=row.get("full_markdown") or "",
+    )
+
+
+class SupabaseDocumentRepository:
+    """Таблица `researched_documents` — готовые брифы в markdown.
+
+    В списке колонка full_markdown не запрашивается: она весит десятки
+    килобайт на строку и в перечне не нужна.
+    """
+
+    LIST_COLUMNS = "id,name,normalized_name,document_type,status,source_query,researched_at"
+
+    def __init__(self, client: PostgrestClient, table: str = "researched_documents") -> None:
+        self.client = client
+        self.table = table
+
+    def list(
+        self,
+        *,
+        query: str | None = None,
+        limit: int | None = None,
+        offset: int = 0,
+        with_count: bool = False,
+    ) -> tuple[list[ResearchDocument], int | None]:
+        params = {
+            "select": self.LIST_COLUMNS,
+            "order": "researched_at.desc.nullslast",
+        }
+        term = (query or "").strip()
+        if term:
+            # ilike по имени, нормализованному имени и исходному запросу
+            pattern = f"*{term}*"
+            params["or"] = f"(name.ilike.{pattern},normalized_name.ilike.{pattern},source_query.ilike.{pattern})"
+
+        rows, total = self.client.select(
+            self.table,
+            params=params,
+            offset=offset if limit is not None else None,
+            limit=limit,
+            with_count=with_count,
+        )
+        return [row_to_document(r) for r in rows], total
+
+    def get(self, document_id: str) -> ResearchDocument | None:
+        rows, _ = self.client.select(
+            self.table,
+            params={"select": "*", "id": f"eq.{document_id}", "limit": "1"},
+        )
+        return row_to_document(rows[0]) if rows else None
+
+    def statuses(self) -> list[str]:
+        rows, _ = self.client.select(self.table, params={"select": "status"})
+        return sorted({(r.get("status") or "").strip() for r in rows} - {""})

@@ -1,7 +1,10 @@
+{# Счётчик показывается только на своей странице — там, где реальное число
+   уже посчитано запросом к базе; на остальных страницах он пуст. #}
+{% set page_total = total | default('', true) %}
 {% set nav_items = [
   {'key': 'home',     'label': 'Desk',               'count': '',                        'dot': 'tone-blue',  'href': url_for('web.desk')},
-  {'key': 'brief',    'label': 'Prospect Brief',     'count': prospect_count,            'dot': 'tone-amber', 'href': url_for('web.prospects')},
-  {'key': 'triggers', 'label': 'Triggers',           'count': total|default('', true),   'dot': 'tone-green', 'href': url_for('web.triggers')},
+  {'key': 'brief',    'label': 'Prospect Brief',     'count': page_total if nav_active == 'brief' else '',            'dot': 'tone-amber', 'href': url_for('web.prospects')},
+  {'key': 'triggers', 'label': 'Triggers',           'count': page_total if nav_active == 'triggers' else '',   'dot': 'tone-green', 'href': url_for('web.triggers')},
   {'key': 'sources',  'label': 'Triggers & sources', 'count': '',                        'dot': 'tone-faint', 'href': url_for('web.sources')}
 ] %}
 <aside class="aside">

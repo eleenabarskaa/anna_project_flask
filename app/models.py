@@ -213,3 +213,25 @@ class Kpi(Serializable):
     delta: str
     tone: str
     note: str
+
+
+@dataclass
+class ResearchDocument(Serializable):
+    """Строка таблицы `researched_documents` — готовый бриф в markdown."""
+
+    id: str
+    name: str
+    normalized_name: str = ""
+    document_type: str = ""          # person | company | …
+    status: str = ""                 # completed | running | …
+    source_query: str = ""
+    researched_at: str | None = None
+    full_markdown: str = ""
+
+    @property
+    def is_completed(self) -> bool:
+        return (self.status or "").lower() == "completed"
+
+    @property
+    def has_content(self) -> bool:
+        return bool((self.full_markdown or "").strip())

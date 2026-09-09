@@ -44,23 +44,27 @@ def desk():
 
 @bp.get("/prospects")
 def prospects():
-    """Prospect Brief — поиск и список результатов."""
+    """Prospect Brief — список готовых брифов из researched_documents."""
     query = request.args.get("q", "")
-    results = service().search_prospects(query)
+    page = max(1, request.args.get("page", 1, type=int))
+    data = service().documents_page(
+        query=query,
+        page=page,
+        per_page=current_app.config["DOCUMENTS_PER_PAGE"],
+    )
     return render_template(
         "pages/brief.html",
         nav_active="brief",
         crumb="Search · Prospect briefs",
         query=query,
-        results=results,
-        filter_chips=seed_data.FILTER_CHIPS,
+        **data,  # documents, total, page, pages, per_page, data_error
     )
 
 
-@bp.get("/prospects/<prospect_id>")
-def prospect_detail(prospect_id: str):
-    """Досье по конкретному проспекту."""
-    payload = service().dossier_for(prospect_id)
+@bp.get("/prospects/<document_id>")
+def prospect_detail(document_id: str):
+    """Досье: full_markdown из researched_documents, отрендеренный в HTML."""
+    payload = service().document(document_id)
     if payload is None:
         abort(404)
     return render_template(
@@ -69,16 +73,6 @@ def prospect_detail(prospect_id: str):
         crumb="Dossier · Prospect brief",
         **payload,
     )
-
-
-@bp.post("/prospects/<prospect_id>/watch")
-def toggle_watch(prospect_id: str):
-    repos = current_app.repos  # type: ignore[attr-defined]
-    prospect = repos.prospects.get(prospect_id)
-    if prospect is None:
-        abort(404)
-    repos.prospects.set_watched(prospect_id, not prospect.watched)
-    return redirect(request.referrer or url_for("web.prospect_detail", prospect_id=prospect_id))
 
 
 @bp.get("/triggers")

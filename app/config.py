@@ -44,6 +44,8 @@ def build_config(name: str | None = None) -> dict[str, Any]:
         "SUPABASE_SECRET_KEY": os.getenv("SUPABASE_SECRET_KEY"),
         "SUPABASE_TRIGGERS_TABLE": os.getenv("SUPABASE_TRIGGERS_TABLE", "triggers"),
         "SUPABASE_TRIGGER_JOBS_TABLE": os.getenv("SUPABASE_TRIGGER_JOBS_TABLE", "trigger_jobs"),
+        "SUPABASE_DOCUMENTS_TABLE": os.getenv("SUPABASE_DOCUMENTS_TABLE", "researched_documents"),
+        "DOCUMENTS_PER_PAGE": _int("DOCUMENTS_PER_PAGE", 20),
 
         # --- Поиск триггеров (кнопка Find triggers) ---------------------
         # Вебхук n8n: принимает собранные статьи, гоняет LLM-классификацию
