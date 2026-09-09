@@ -7,8 +7,8 @@
     <div class="eyebrow">{{ now_label }}</div>
     <h1 style="margin:8px 0 0;font-size:27px;font-weight:600;letter-spacing:-.02em">Good morning, {{ user_name.split()[0] }}</h1>
     <p style="margin:6px 0 0;font-size:13.5px;color:rgba(18,22,27,.6);max-width:56ch" class="pretty">
-      {{ kpis[0].value }} new liquidity events matched your mandate overnight.
-      {{ kpis[1].value }} touch names already on your watchlist.
+      {{ kpis[0].value }} new liquidity event(s) landed in the last 24 hours.
+      {{ watchlist|length }} name(s) on your watchlist.
     </p>
   </div>
   <div style="display:flex;flex-direction:column;gap:7px">
@@ -67,47 +67,37 @@
             </div>
           </div>
         </a>
+      {% else %}
+        <div class="row muted" style="padding:22px 16px">Пока нет ни одного триггера в базе.</div>
       {% endfor %}
     </section>
 
-    <div class="stack">
-      <section class="panel">
-        <div class="panel-head">
-          <h2>Watchlist</h2>
-          <span class="mono" style="font-size:10.5px;color:rgba(18,22,27,.45)">{{ watchlist|length }} names</span>
-        </div>
-        {% for w in watchlist %}
-          <a class="row row-hover" style="display:flex;gap:12px;align-items:flex-start;text-decoration:none;color:inherit"
-             href="{{ url_for('web.prospects', q=w.name) }}">
-            <div style="min-width:0;flex:1">
-              <div style="font-size:12.5px;font-weight:600">{{ w.name }}</div>
-              <div class="pretty" style="margin-top:3px;font-size:11.5px;color:rgba(18,22,27,.55)">{{ w.note }}</div>
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Watchlist</h2>
+        <span class="mono" style="font-size:10.5px;color:rgba(18,22,27,.45)">{{ watchlist|length }} names</span>
+      </div>
+      {% for w in watchlist %}
+        <div class="row" style="display:flex;gap:12px;align-items:center">
+          <a style="min-width:0;flex:1;text-decoration:none;color:inherit"
+             href="{{ url_for('web.prospect_detail', document_id=w.id) }}">
+            <div style="font-size:12.5px;font-weight:600">{{ w.name }}</div>
+            <div class="pretty" style="margin-top:3px;font-size:11.5px;color:rgba(18,22,27,.55)">
+              {{ w.source_query or '—' }}
             </div>
-            <span class="flag tone-{{ w.tone }}">{{ w.flag }}</span>
           </a>
-        {% endfor %}
-      </section>
-
-      <section class="panel">
-        <div class="panel-head">
-          <h2>Today</h2>
-          <span class="mono" style="font-size:10.5px;color:rgba(18,22,27,.45)">
-            {{ tasks | rejectattr('done') | list | length }} open
-          </span>
+          <span class="status-pill {{ 'text-green' if w.is_completed else 'text-amber' }}">{{ w.status or '—' }}</span>
+          <form method="post" action="{{ url_for('web.toggle_watch', document_id=w.id) }}" class="inline-form">
+            <button class="btn btn-sm" type="submit" title="Убрать из watchlist">★</button>
+          </form>
         </div>
-        {% for t in tasks %}
-          <div class="row" style="display:flex;gap:10px;align-items:flex-start">
-            <form method="post" action="{{ url_for('web.toggle_task', task_id=t.id) }}" class="inline-form">
-              <button class="btn btn-sm" type="submit" title="Toggle">{{ '✓' if t.done else '○' }}</button>
-            </form>
-            <div style="min-width:0">
-              <div style="font-size:12.5px;{% if t.done %}text-decoration:line-through;color:rgba(18,22,27,.4){% endif %}">{{ t.label }}</div>
-              <div style="margin-top:3px;font-size:11px;color:rgba(18,22,27,.5)">{{ t.meta }}</div>
-            </div>
-          </div>
-        {% endfor %}
-      </section>
-    </div>
+      {% else %}
+        <div class="row muted" style="padding:22px 16px">
+          Watchlist пуст. Отметьте бриф звёздочкой в
+          <a href="{{ url_for('web.prospects') }}">Prospect Brief</a>.
+        </div>
+      {% endfor %}
+    </section>
   </div>
 
 {% elif variant == 'queue' %}
@@ -152,20 +142,47 @@
   </div>
 
 {% else %}
+  {% set brief_running = brief_job and not brief_job.finished %}
   <section class="command">
     <div class="command-inner">
       <div class="label">Ask the desk</div>
-      <form class="command-bar" method="get" action="{{ url_for('web.prospects') }}">
-        <input name="q" value="{{ query|default('', true) }}"
+      <form class="command-bar" method="post" action="{{ url_for('web.run_brief') }}">
+        <input name="q" value="{{ brief_job.query if brief_job else query }}" {{ 'disabled' if brief_running }}
                placeholder="e.g. founders who exited a Swiss industrial group since March">
-        <button type="submit">Build brief</button>
+        <button type="submit" {{ 'disabled' if brief_running }}>
+          {{ 'Researching…' if brief_running else 'Build brief' }}
+        </button>
       </form>
       <div class="suggestions">
         {% for s in suggestions %}
-          <a href="{{ url_for('web.prospects', q=s) }}">{{ s }}</a>
+          <a href="{{ url_for('web.desk', variant='command', q=s) }}">{{ s }}</a>
         {% endfor %}
       </div>
     </div>
+
+    {% if brief_job %}
+      <div id="briefStatus" class="scan-status" style="max-width:720px;margin:18px auto 0"
+           data-job="{{ brief_job.id }}">
+        <div class="scan-head">
+          <span class="scan-dot {{ 'is-running' if brief_running else brief_job.status }}"></span>
+          <span id="briefStage">{{ brief_job.stage }}</span>
+          {% if brief_running %}
+            <form method="post" action="{{ url_for('web.stop_brief', job_id=brief_job.id) }}"
+                  class="inline-form" style="margin-left:auto">
+              <button class="btn btn-sm" type="submit">Stop</button>
+            </form>
+          {% endif %}
+        </div>
+        <pre id="briefLog" class="scan-log">{{ brief_job.log | join('\n') }}</pre>
+        {% if brief_job.error %}
+          <div class="scan-result"><span class="scan-error">{{ brief_job.error }}</span></div>
+        {% elif brief_reply and not brief_reply.empty %}
+          <div class="scan-result" style="text-align:left">
+            <article class="markdown" style="padding:6px 0">{{ brief_reply.html }}</article>
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
   </section>
 
   <div class="grid-2" style="margin-top:18px">
@@ -187,15 +204,51 @@
       <div class="panel-head"><h2>Recent briefs</h2></div>
       {% for r in recent_briefs %}
         <a class="row row-hover" style="display:flex;justify-content:space-between;gap:12px;text-decoration:none;color:inherit"
-           href="{{ url_for('web.prospects', q=r.name) }}">
+           href="{{ url_for('web.prospect_detail', document_id=r.id) }}">
           <div style="min-width:0">
             <div style="font-size:12.5px;font-weight:600">{{ r.name }}</div>
-            <div style="margin-top:3px;font-size:11.5px;color:rgba(18,22,27,.55)">{{ r.meta }}</div>
+            <div style="margin-top:3px;font-size:11.5px;color:rgba(18,22,27,.55)">
+              {{ r.document_type or '—' }} · {{ r.status or '—' }}
+            </div>
           </div>
-          <span class="mono" style="font-size:10.5px;color:rgba(18,22,27,.4)">{{ r.when }}</span>
+          <span class="mono" style="font-size:10.5px;color:rgba(18,22,27,.4)">{{ r.researched_at or '—' }}</span>
         </a>
+      {% else %}
+        <div class="row muted" style="padding:20px 16px">Пока нет ни одного брифа.</div>
       {% endfor %}
     </section>
   </div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if brief_job and not brief_job.finished %}
+<script>
+// Опрос задачи «Build brief»: агент работает минутами, поэтому страница
+// подтягивает стадию и лог, а по завершении перезагружается за ответом.
+(function () {
+  var box = document.getElementById('briefStatus');
+  if (!box) return;
+
+  var stage = document.getElementById('briefStage');
+  var log = document.getElementById('briefLog');
+  var url = {{ url_for('api.brief_status', job_id='__ID__') | tojson }}.replace('__ID__', box.dataset.job);
+
+  function tick() {
+    fetch(url, { headers: { 'Accept': 'application/json' } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (job) {
+        if (!job) return;
+        stage.textContent = job.stage;
+        log.textContent = job.log.join('\n');
+        log.scrollTop = log.scrollHeight;
+        if (job.finished) { window.location.reload(); return; }
+        setTimeout(tick, 3000);
+      })
+      .catch(function () { setTimeout(tick, 6000); });
+  }
+  setTimeout(tick, 2000);
+})();
+</script>
 {% endif %}
 {% endblock %}

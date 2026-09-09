@@ -108,16 +108,17 @@ def prospect_queue():
     )
 
 
-@bp.post("/prospects/<prospect_id>/watch")
-def set_watch(prospect_id: str):
+@bp.post("/prospects/<document_id>/watch")
+def set_watch(document_id: str):
+    """Переключить бриф в watchlist: {"watched": true} или без тела — тогл."""
     body = request.get_json(silent=True) or {}
     repos = current_app.repos  # type: ignore[attr-defined]
-    current = repos.prospects.get(prospect_id)
+    current = repos.documents.get(document_id)
     if current is None:
-        return jsonify(error="not_found", message=f"prospect {prospect_id}"), 404
+        return jsonify(error="not_found", message=f"document {document_id}"), 404
     watched = bool(body.get("watched", not current.watched))
-    prospect = repos.prospects.set_watched(prospect_id, watched)
-    return jsonify(prospect.to_dict())
+    updated = repos.documents.set_watched(document_id, watched)
+    return jsonify({k: v for k, v in updated.to_dict().items() if k != "full_markdown"})
 
 
 # --- Desk ----------------------------------------------------------------
@@ -128,32 +129,26 @@ def desk_overview():
     return jsonify(
         kpis=data["kpis"],
         latest_triggers=[_trigger_dict(t) for t in data["latest_triggers"]],
-        watchlist=[w.to_dict() for w in data["watchlist"]],
-        tasks=[t.to_dict() for t in data["tasks"]],
+        watchlist=[
+            {k: v for k, v in w.to_dict().items() if k != "full_markdown"}
+            for w in data["watchlist"]
+        ],
+        recent_briefs=[
+            {k: v for k, v in b.to_dict().items() if k != "full_markdown"}
+            for b in data["recent_briefs"]
+        ],
         queue=[p.to_dict() for p in data["queue"]],
         composition=data["composition"],
-        recent_briefs=data["recent_briefs"],
     )
-
-
-@bp.get("/desk/tasks")
-def list_tasks():
-    rows = current_app.repos.desk.tasks()  # type: ignore[attr-defined]
-    return jsonify(items=[t.to_dict() for t in rows])
-
-
-@bp.post("/desk/tasks/<int:task_id>/toggle")
-def toggle_task(task_id: int):
-    task = current_app.repos.desk.toggle_task(task_id)  # type: ignore[attr-defined]
-    if task is None:
-        return jsonify(error="not_found", message=f"task {task_id}"), 404
-    return jsonify(task.to_dict())
 
 
 @bp.get("/desk/watchlist")
 def watchlist():
-    rows = current_app.repos.desk.watchlist()  # type: ignore[attr-defined]
-    return jsonify(items=[w.to_dict() for w in rows])
+    rows = current_app.repos.documents.watchlist(50)  # type: ignore[attr-defined]
+    return jsonify(
+        items=[{k: v for k, v in d.to_dict().items() if k != "full_markdown"} for d in rows],
+        meta={"total": len(rows)},
+    )
 
 
 # --- Sources -------------------------------------------------------------
@@ -243,3 +238,44 @@ def scan_categories():
     from app.scraping import sources as scraping_sources
 
     return jsonify(items=[{"label": label, "key": key} for label, key in scraping_sources.CATEGORIES])
+
+
+# --- Build brief (вкладка Command) ---------------------------------------
+
+@bp.get("/brief/<job_id>")
+def brief_status(job_id: str):
+    """Статус запроса к агенту: стадия, лог и готовый ответ."""
+    from app.services.brief_runner import registry as brief_registry
+
+    job = brief_registry.get(job_id)
+    if job is None:
+        return jsonify(error="not_found", message=f"brief job {job_id}"), 404
+    return jsonify(job.to_dict())
+
+
+@bp.post("/brief")
+def brief_start():
+    """Запуск из API: {"q": "founders who exited a Swiss industrial group"}."""
+    from app.services.brief_runner import BriefService
+    from app.services.brief_runner import registry as brief_registry
+
+    running = brief_registry.running()
+    if running is not None:
+        return jsonify(error="already_running", job=running.to_dict()), 409
+
+    body = request.get_json(silent=True) or {}
+    query = (body.get("q") or body.get("message") or "").strip()
+    if not query:
+        return jsonify(error="empty_query", message="Нужен непустой запрос"), 400
+
+    runner = BriefService(dict(current_app.config), chat_jobs=current_app.repos.chat_jobs)
+    return jsonify(runner.start(query, body.get("session_id")).to_dict()), 202
+
+
+@bp.post("/brief/<job_id>/stop")
+def brief_stop(job_id: str):
+    from app.services.brief_runner import registry as brief_registry
+
+    if not brief_registry.cancel(job_id):
+        return jsonify(error="not_running", message=f"brief job {job_id}"), 409
+    return jsonify(brief_registry.get(job_id).to_dict())

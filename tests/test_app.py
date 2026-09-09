@@ -50,16 +50,20 @@ def test_search_filters(client):
 
 # --- действия ------------------------------------------------------------
 
-def test_watch_toggle_roundtrip(client):
-    before = client.get("/api/v1/prospects/queue").get_json()["items"][0]["watched"]
-    after = client.post("/api/v1/prospects/p1/watch").get_json()["watched"]
-    assert after is not before
+def test_watchlist_toggle_roundtrip(client):
+    doc = client.get("/api/v1/prospects").get_json()["items"][0]
+    toggled = client.post(f"/api/v1/prospects/{doc['id']}/watch").get_json()
+    assert toggled["watched"] is not doc["watched"]
+
+    back = client.post(f"/api/v1/prospects/{doc['id']}/watch").get_json()
+    assert back["watched"] is doc["watched"]
 
 
-def test_task_toggle(client):
-    first = client.get("/api/v1/desk/tasks").get_json()["items"][0]
-    toggled = client.post(f"/api/v1/desk/tasks/{first['id']}/toggle").get_json()
-    assert toggled["done"] is not first["done"]
+def test_watchlist_endpoint_lists_watched_docs(client):
+    doc = client.get("/api/v1/prospects").get_json()["items"][0]
+    client.post(f"/api/v1/prospects/{doc['id']}/watch", json={"watched": True})
+    names = [d["name"] for d in client.get("/api/v1/desk/watchlist").get_json()["items"]]
+    assert doc["name"] in names
 
 
 def test_category_toggle(client):
@@ -99,7 +103,7 @@ def test_api_queue_sorted_by_fit(client):
 
 def test_api_overview_shape(client):
     data = client.get("/api/v1/desk/overview").get_json()
-    for key in ("kpis", "latest_triggers", "watchlist", "tasks", "queue", "composition"):
+    for key in ("kpis", "latest_triggers", "watchlist", "recent_briefs", "queue", "composition"):
         assert key in data and data[key]
 
 

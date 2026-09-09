@@ -190,23 +190,6 @@ class IngestLogEntry(Serializable):
 
 
 @dataclass
-class DeskTask(Serializable):
-    id: int
-    label: str
-    meta: str
-    done: bool = False
-
-
-@dataclass
-class WatchlistItem(Serializable):
-    prospect_id: str
-    name: str
-    note: str
-    flag: str
-    tone: str  # amber | blue | muted | faint
-
-
-@dataclass
 class Kpi(Serializable):
     label: str
     value: str
@@ -227,6 +210,7 @@ class ResearchDocument(Serializable):
     source_query: str = ""
     researched_at: str | None = None
     full_markdown: str = ""
+    watched: bool = False
 
     @property
     def is_completed(self) -> bool:

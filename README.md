@@ -150,6 +150,51 @@ reportlab — чистый Python.
 шрифт в репозитории. Если файлов нет, экспорт не падает — откатывается на
 Helvetica.
 
+## Главная (Desk)
+
+Считается из базы:
+
+| Виджет | Источник |
+|---|---|
+| KPI «New triggers · 24h» | `count(triggers)` где `created_at >= now() - 24h` |
+| KPI «Briefs enriched · week» | `count(researched_documents)` где `researched_at >= now() - 7d`, в подписи — всего записей |
+| Last triggers | последние 5 строк `triggers` по `created_at` |
+| Watchlist | `researched_documents` где `watched = true` |
+| Recent briefs | последние 4 записи `researched_documents` |
+
+KPI «Watchlist touched» держит 0: отметок о контакте в базе нет. Появится
+колонка с датой последнего касания — посчитаем и его. «Sources healthy» и
+раскладка Priority queue пока на демо-данных — под них нет таблиц.
+
+### Watchlist
+
+Хранится в колонке `researched_documents.watched`. Звёздочка в списке
+Prospect Brief и кнопка в досье переключают её (`POST /prospects/<id>/watch`,
+в API — `POST /api/v1/prospects/<id>/watch`). Отмеченные записи попадают в
+виджет Watchlist на главной.
+
+Нужна миграция:
+
+```sql
+alter table researched_documents
+  add column if not exists watched boolean not null default false;
+```
+
+### Кнопка Build brief (вкладка Command)
+
+Порт логики из Streamlit (`render_plain_chat` + `poll_for_job_result`),
+контракт не менялся:
+
+1. `POST PROSPECT_BRIEF_NEW_RUN_WEBHOOK_URL` с `{message, mode: "new_run", session_id}`;
+2. вебхук отвечает `{job_id}` — если вместо этого пришёл текст, он считается
+   синхронным ответом и показывается сразу (то же поведение, что было);
+3. приложение опрашивает `chat_jobs` по `job_id` до `status = done` (`reply`)
+   или `error`, по умолчанию не дольше 9 минут;
+4. ответ агента рендерится тем же безопасным markdown-конвертером, что и досье.
+
+Запрос уходит в фоновый поток, страница опрашивает `GET /api/v1/brief/<job_id>`
+раз в 3 секунды — HTTP-запрос не висит и не упирается в таймаут gunicorn.
+
 ## Кнопка Find triggers
 
 Порт логики из Streamlit-версии (`render_find_trigger_info_section`). Триггеры

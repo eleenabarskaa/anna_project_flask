@@ -23,6 +23,11 @@
   </div>
 
   <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <form method="post" action="{{ url_for('web.toggle_watch', document_id=document.id) }}" class="inline-form">
+      <button class="btn btn-lg" type="submit">
+        {{ '★ On watchlist' if document.watched else '☆ Add to watchlist' }}
+      </button>
+    </form>
     <a class="btn btn-primary btn-lg" href="{{ url_for('web.prospect_pdf', document_id=document.id) }}">Download PDF</a>
   </div>
 </div>

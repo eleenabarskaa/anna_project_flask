@@ -45,6 +45,7 @@ def build_config(name: str | None = None) -> dict[str, Any]:
         "SUPABASE_TRIGGERS_TABLE": os.getenv("SUPABASE_TRIGGERS_TABLE", "triggers"),
         "SUPABASE_TRIGGER_JOBS_TABLE": os.getenv("SUPABASE_TRIGGER_JOBS_TABLE", "trigger_jobs"),
         "SUPABASE_DOCUMENTS_TABLE": os.getenv("SUPABASE_DOCUMENTS_TABLE", "researched_documents"),
+        "SUPABASE_CHAT_JOBS_TABLE": os.getenv("SUPABASE_CHAT_JOBS_TABLE", "chat_jobs"),
         "DOCUMENTS_PER_PAGE": _int("DOCUMENTS_PER_PAGE", 20),
 
         # --- Поиск триггеров (кнопка Find triggers) ---------------------
@@ -55,6 +56,13 @@ def build_config(name: str | None = None) -> dict[str, Any]:
         "SCAN_POLL_TIMEOUT": _int("SCAN_POLL_TIMEOUT", 300),
         "SCAN_POLL_INTERVAL": _int("SCAN_POLL_INTERVAL", 3),
         "SCAN_DEFAULT_MONTHS": _int("SCAN_DEFAULT_MONTHS", 3),
+
+        # --- Кнопка Build brief (вкладка Command) -----------------------
+        # Тот же вебхук, что в Streamlit-версии: принимает {message, mode,
+        # session_id}, отвечает job_id, результат кладёт в chat_jobs.
+        "PROSPECT_BRIEF_NEW_RUN_WEBHOOK_URL": os.getenv("PROSPECT_BRIEF_NEW_RUN_WEBHOOK_URL"),
+        "BRIEF_POLL_TIMEOUT": _int("BRIEF_POLL_TIMEOUT", 540),
+        "BRIEF_POLL_INTERVAL": _int("BRIEF_POLL_INTERVAL", 3),
 
         # --- заготовки под будущие подключения --------------------------
         "DATABASE_URL": os.getenv("DATABASE_URL"),

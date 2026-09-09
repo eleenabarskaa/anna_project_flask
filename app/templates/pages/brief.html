@@ -26,16 +26,16 @@
 <div class="panel scroll-x">
   <div class="table-head brief-cols">
     <div>Prospect</div><div>Research query</div><div>Type</div><div>Status</div>
-    <div style="text-align:right">Researched</div>
+    <div style="text-align:right">Researched</div><div></div>
   </div>
 
   {% for d in documents %}
-    <a class="grid-row brief-cols row-hover" style="text-decoration:none;color:inherit"
-       href="{{ url_for('web.prospect_detail', document_id=d.id) }}">
-      <div style="min-width:0">
+    <div class="grid-row brief-cols row-hover" style="position:relative">
+      <a style="min-width:0;text-decoration:none;color:inherit"
+         href="{{ url_for('web.prospect_detail', document_id=d.id) }}">
         <div style="font-size:13.5px;font-weight:600">{{ d.name }}</div>
         <div class="mono" style="margin-top:3px;font-size:10px;color:rgba(18,22,27,.4)">{{ d.id[:8] }}</div>
-      </div>
+      </a>
       <div class="pretty" style="font-size:12.5px;color:rgba(18,22,27,.65)">{{ d.source_query or '—' }}</div>
       <div style="font-size:12px;color:rgba(18,22,27,.65)">{{ d.document_type or '—' }}</div>
       <div>
@@ -45,7 +45,14 @@
       <div class="mono" style="font-size:10.5px;color:rgba(18,22,27,.45);text-align:right">
         {{ d.researched_at or '—' }}
       </div>
-    </a>
+      <form method="post" action="{{ url_for('web.toggle_watch', document_id=d.id) }}"
+            class="inline-form" style="text-align:right">
+        <button class="star {{ 'is-on' if d.watched }}" type="submit"
+                title="{{ 'Убрать из watchlist' if d.watched else 'Добавить в watchlist' }}">
+          {{ '★' if d.watched else '☆' }}
+        </button>
+      </form>
+    </div>
   {% else %}
     <div class="row muted" style="padding:24px 16px">
       {% if query %}

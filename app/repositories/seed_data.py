@@ -11,7 +11,6 @@ from datetime import date
 
 from app.models import (
     Angle,
-    DeskTask,
     Dossier,
     Fact,
     IngestLogEntry,
@@ -26,7 +25,6 @@ from app.models import (
     Trigger,
     TriggerCategory,
     TriggerType,
-    WatchlistItem,
 )
 
 TRIGGERS: list[Trigger] = [
@@ -455,44 +453,6 @@ INGEST_LOG: list[IngestLogEntry] = [
     ),
 ]
 
-DESK_TASKS: list[DeskTask] = [
-    DeskTask(id=1, label="Call Elisabeth Brunner’s advisor before WEKO filing", meta="Due 09:30 · Helvetia trigger"),
-    DeskTask(id=2, label="Review Vaduz Chemicals IPO allocation note", meta="Due 11:00 · with Legal"),
-    DeskTask(id=3, label="Sign off Nordkap brief for the Milan desk", meta="Due 14:00", done=True),
-    DeskTask(id=4, label="Refresh source licences expiring this month", meta="Due Friday"),
-]
-
-WATCHLIST: list[WatchlistItem] = [
-    WatchlistItem(
-        prospect_id="p3",
-        name="Lorenzo Ferretti",
-        note="Cash offer on his 18.4% block — offer period opens Monday",
-        flag="HOT",
-        tone="amber",
-    ),
-    WatchlistItem(
-        prospect_id="p6",
-        name="Daniel Wyss",
-        note="PE exit closed; rollover leaves EUR 34m unallocated",
-        flag="NEW",
-        tone="blue",
-    ),
-    WatchlistItem(
-        prospect_id="p4",
-        name="Marc Keller",
-        note="IPO 12 Sep — lock-up expires March 2027",
-        flag="CAL",
-        tone="muted",
-    ),
-    WatchlistItem(
-        prospect_id="p7",
-        name="Camille Dupasquier",
-        note="Succession settled; no contact attempt yet",
-        flag="IDLE",
-        tone="faint",
-    ),
-]
-
 KPIS: list[Kpi] = [
     Kpi(label="New triggers · 24h", value="14", delta="+5", tone="amber", note="9 above CHF 50m"),
     Kpi(label="Watchlist touched", value="3", delta="live", tone="blue", note="of 4 tracked"),
@@ -575,8 +535,9 @@ RESEARCH_DOCUMENTS = [
         "document_type": "person",
         "status": "completed",
         "source_query": "find information about Elisabeth Brunner",
-        "researched_at": "2026-09-05 06:12:00+00",
+        "researched_at": "05 Sep 2026",
         "full_markdown": _BRUNNER_MD,
+        "watched": True,
     },
     {
         "id": "22222222-2222-4222-8222-222222222222",
@@ -585,7 +546,7 @@ RESEARCH_DOCUMENTS = [
         "document_type": "company",
         "status": "completed",
         "source_query": "find information about Vaduz Chemicals Holding",
-        "researched_at": "2026-09-03 08:05:00+00",
+        "researched_at": "03 Sep 2026",
         "full_markdown": "# PROSPECT ENRICHMENT BRIEF\n\n## 1. Executive Assessment\n\nIPO priced at the top of the range; two co-founders sold secondary lines.\n",
     },
     {

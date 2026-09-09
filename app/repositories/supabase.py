@@ -19,7 +19,7 @@ import re
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
 
 from app.models import ResearchDocument, Trigger
 
@@ -81,6 +81,33 @@ class PostgrestClient:
             raise PostgrestError(f"Supabase недоступен: {err.reason}") from err
 
         return payload, total
+
+    def patch(self, table: str, *, params: dict[str, str], data: dict) -> list[dict]:
+        """PATCH /rest/v1/<table>?<фильтр> — точечное обновление строк."""
+        query = urllib.parse.urlencode(params, safe="*.,()")
+        url = f"{self.base_url}/rest/v1/{table}?{query}"
+        body = json.dumps(data).encode("utf-8")
+
+        request = urllib.request.Request(
+            url,
+            data=body,
+            method="PATCH",
+            headers={
+                "apikey": self.api_key,
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "Prefer": "return=representation",
+            },
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                return json.loads(response.read().decode("utf-8") or "[]")
+        except urllib.error.HTTPError as err:
+            detail = err.read().decode("utf-8", "replace")[:500]
+            raise PostgrestError(f"Supabase {err.code}: {detail}") from err
+        except urllib.error.URLError as err:
+            raise PostgrestError(f"Supabase недоступен: {err.reason}") from err
 
 
 def _parse_total(content_range: str | None) -> int | None:
@@ -204,6 +231,28 @@ class SupabaseTriggerRepository:
         seen = {(r.get("trigger_type") or "").strip() for r in rows}
         return sorted(t for t in seen if t)
 
+    def count_since(self, hours: int = 24) -> int:
+        """Сколько триггеров добавлено за последние N часов (по created_at)."""
+        since = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
+        _, total = self.client.select(
+            self.table,
+            params={"select": "id", "created_at": f"gte.{since}"},
+            offset=0,
+            limit=1,
+            with_count=True,
+        )
+        return total or 0
+
+    def latest_added(self, limit: int = 5) -> list[Trigger]:
+        """Последние добавленные (по created_at), а не по дате события."""
+        rows, _ = self.client.select(
+            self.table,
+            params={"select": "*", "order": "created_at.desc"},
+            offset=0,
+            limit=limit,
+        )
+        return [row_to_trigger(r) for r in rows]
+
     def refresh_hint(self) -> None:
         """PostgREST не кэширует — метод оставлен для симметрии с memory-версией."""
 
@@ -265,6 +314,7 @@ def row_to_document(row: dict) -> ResearchDocument:
         source_query=(row.get("source_query") or "").strip(),
         researched_at=_researched_at(row.get("researched_at")),
         full_markdown=row.get("full_markdown") or "",
+        watched=bool(row.get("watched")),
     )
 
 
@@ -275,7 +325,9 @@ class SupabaseDocumentRepository:
     килобайт на строку и в перечне не нужна.
     """
 
-    LIST_COLUMNS = "id,name,normalized_name,document_type,status,source_query,researched_at"
+    LIST_COLUMNS = (
+        "id,name,normalized_name,document_type,status,source_query,researched_at,watched"
+    )
 
     def __init__(self, client: PostgrestClient, table: str = "researched_documents") -> None:
         self.client = client
@@ -318,3 +370,72 @@ class SupabaseDocumentRepository:
     def statuses(self) -> list[str]:
         rows, _ = self.client.select(self.table, params={"select": "status"})
         return sorted({(r.get("status") or "").strip() for r in rows} - {""})
+
+    def set_watched(self, document_id: str, watched: bool) -> ResearchDocument | None:
+        rows = self.client.patch(
+            self.table,
+            params={"id": f"eq.{document_id}", "select": self.LIST_COLUMNS},
+            data={"watched": watched},
+        )
+        return row_to_document(rows[0]) if rows else None
+
+    def watchlist(self, limit: int = 10) -> list[ResearchDocument]:
+        rows, _ = self.client.select(
+            self.table,
+            params={
+                "select": self.LIST_COLUMNS,
+                "watched": "is.true",
+                "order": "researched_at.desc.nullslast",
+            },
+            offset=0,
+            limit=limit,
+        )
+        return [row_to_document(r) for r in rows]
+
+    def count_watched(self) -> int:
+        _, total = self.client.select(
+            self.table,
+            params={"select": "id", "watched": "is.true"},
+            offset=0,
+            limit=1,
+            with_count=True,
+        )
+        return total or 0
+
+    def count_since(self, days: int = 7) -> int:
+        """Сколько брифов создано за последние N дней (по researched_at)."""
+        since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+        _, total = self.client.select(
+            self.table,
+            params={"select": "id", "researched_at": f"gte.{since}"},
+            offset=0,
+            limit=1,
+            with_count=True,
+        )
+        return total or 0
+
+    def count_all(self) -> int:
+        _, total = self.client.select(
+            self.table, params={"select": "id"}, offset=0, limit=1, with_count=True
+        )
+        return total or 0
+
+
+
+class SupabaseChatJobRepository:
+    """Таблица `chat_jobs` — результат работы агента в n8n.
+
+    Строка: {id, status: running|done|error, reply}. Та же схема, что
+    использовалась в Streamlit-версии.
+    """
+
+    def __init__(self, client: PostgrestClient, table: str = "chat_jobs") -> None:
+        self.client = client
+        self.table = table
+
+    def get(self, job_id: str) -> dict | None:
+        rows, _ = self.client.select(
+            self.table,
+            params={"select": "status,reply", "id": f"eq.{job_id}", "limit": "1"},
+        )
+        return rows[0] if rows else None

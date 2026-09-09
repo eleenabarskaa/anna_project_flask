@@ -12,7 +12,6 @@ from __future__ import annotations
 from typing import Any
 
 from app.repositories.memory import (
-    InMemoryDeskRepository,
     InMemoryDocumentRepository,
     InMemoryDossierRepository,
     InMemoryProspectRepository,
@@ -39,11 +38,11 @@ class Repositories:
         self.prospects = InMemoryProspectRepository()
         self.dossiers = InMemoryDossierRepository()
         self.sources = InMemorySourceRepository()
-        self.desk = InMemoryDeskRepository()
 
         if backend == "supabase":
             from app.repositories.supabase import (
                 PostgrestClient,
+                SupabaseChatJobRepository,
                 SupabaseDocumentRepository,
                 SupabaseJobRepository,
                 SupabaseTriggerRepository,
@@ -66,9 +65,14 @@ class Repositories:
                 client,
                 table=self.settings.get("SUPABASE_DOCUMENTS_TABLE", "researched_documents"),
             )
+            # Таблица chat_jobs — результат работы агента (кнопка Build brief)
+            self.chat_jobs = SupabaseChatJobRepository(
+                client, table=self.settings.get("SUPABASE_CHAT_JOBS_TABLE", "chat_jobs")
+            )
         else:
             self.triggers = InMemoryTriggerRepository()
             self.jobs = None
+            self.chat_jobs = None
             self.documents = InMemoryDocumentRepository()
 
 

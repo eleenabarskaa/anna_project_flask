@@ -10,8 +10,9 @@ from __future__ import annotations
 import copy
 import threading
 
+from datetime import datetime, timedelta, timezone
+
 from app.models import (
-    DeskTask,
     Dossier,
     IngestLogEntry,
     Prospect,
@@ -19,7 +20,6 @@ from app.models import (
     Source,
     Trigger,
     TriggerCategory,
-    WatchlistItem,
 )
 from app.repositories import seed_data
 
@@ -38,8 +38,6 @@ class _Store:
         self.sources: list[Source] = copy.deepcopy(seed_data.SOURCES)
         self.categories: list[TriggerCategory] = copy.deepcopy(seed_data.TRIGGER_CATEGORIES)
         self.logs: list[IngestLogEntry] = copy.deepcopy(seed_data.INGEST_LOG)
-        self.tasks: list[DeskTask] = copy.deepcopy(seed_data.DESK_TASKS)
-        self.watchlist: list[WatchlistItem] = copy.deepcopy(seed_data.WATCHLIST)
         self.documents: list[ResearchDocument] = [
             ResearchDocument(**row) for row in copy.deepcopy(seed_data.RESEARCH_DOCUMENTS)
         ]
@@ -73,6 +71,13 @@ class InMemoryTriggerRepository:
 
     def distinct_types(self) -> list[str]:
         return sorted({t.type for t in store.triggers})
+
+    def count_since(self, hours: int = 24) -> int:
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).date()
+        return len([t for t in store.triggers if t.date >= cutoff])
+
+    def latest_added(self, limit: int = 5) -> list[Trigger]:
+        return self.latest(limit)
 
     @staticmethod
     def _filtered(category: str | None) -> list[Trigger]:
@@ -133,22 +138,6 @@ class InMemorySourceRepository:
         return list(store.logs)
 
 
-class InMemoryDeskRepository:
-    def tasks(self) -> list[DeskTask]:
-        return list(store.tasks)
-
-    def toggle_task(self, task_id: int) -> DeskTask | None:
-        with store.lock:
-            task = next((t for t in store.tasks if t.id == task_id), None)
-            if task is None:
-                return None
-            task.done = not task.done
-            return task
-
-    def watchlist(self) -> list[WatchlistItem]:
-        return list(store.watchlist)
-
-
 class InMemoryDocumentRepository:
     """Демо-версия researched_documents для backend=memory."""
 
@@ -180,3 +169,23 @@ class InMemoryDocumentRepository:
 
     def statuses(self) -> list[str]:
         return sorted({d.status for d in store.documents if d.status})
+
+    def set_watched(self, document_id: str, watched: bool) -> ResearchDocument | None:
+        with store.lock:
+            doc = self.get(document_id)
+            if doc is None:
+                return None
+            doc.watched = watched
+            return doc
+
+    def watchlist(self, limit: int = 10) -> list[ResearchDocument]:
+        return [d for d in store.documents if d.watched][:limit]
+
+    def count_watched(self) -> int:
+        return len([d for d in store.documents if d.watched])
+
+    def count_since(self, days: int = 7) -> int:
+        return len([d for d in store.documents if d.researched_at])
+
+    def count_all(self) -> int:
+        return len(store.documents)

@@ -18,6 +18,8 @@ from flask import (
 from app.repositories import seed_data
 from app.scraping import sources as scraping_sources
 from app.services.desk import DeskService
+from app.services.brief_runner import BriefService
+from app.services.brief_runner import registry as brief_registry
 from app.services.scanner import ScanService
 from app.services.scanner import registry as scan_registry
 
@@ -35,14 +37,49 @@ def desk():
     if variant not in {"desk", "queue", "command"}:
         variant = "desk"
 
+    job_id = request.args.get("job")
+    job = brief_registry.get(job_id) if job_id else brief_registry.running()
+
+    reply = None
+    if job is not None and job.reply:
+        from app.services.markdown_render import render_brief
+
+        reply = render_brief(job.reply)
+
     data = service().overview()
     return render_template(
         "pages/desk.html",
         nav_active="home",
         crumb="Desk · Overview",
         variant=variant,
+        query=request.args.get("q", ""),
+        brief_job=job.to_dict() if job else None,
+        brief_reply=reply,
         **data,
     )
+
+
+@bp.post("/brief/run")
+def run_brief():
+    """Кнопка «Build brief»: отправляет запрос агенту в n8n и уводит на
+    вкладку Command с этой задачей — ответ подтягивается опросом API."""
+    query = (request.form.get("q") or "").strip()
+    if not query:
+        return redirect(url_for("web.desk", variant="command"))
+
+    running = brief_registry.running()
+    if running is not None:
+        return redirect(url_for("web.desk", variant="command", job=running.id))
+
+    service_ = BriefService(dict(current_app.config), chat_jobs=current_app.repos.chat_jobs)  # type: ignore[attr-defined]
+    job = service_.start(query)
+    return redirect(url_for("web.desk", variant="command", job=job.id))
+
+
+@bp.post("/brief/<job_id>/stop")
+def stop_brief(job_id: str):
+    brief_registry.cancel(job_id)
+    return redirect(url_for("web.desk", variant="command", job=job_id))
 
 
 @bp.get("/prospects")
@@ -76,6 +113,17 @@ def prospect_detail(document_id: str):
         crumb="Dossier · Prospect brief",
         **payload,
     )
+
+
+@bp.post("/prospects/<document_id>/watch")
+def toggle_watch(document_id: str):
+    """Добавить/убрать бриф из watchlist (колонка watched)."""
+    repos = current_app.repos  # type: ignore[attr-defined]
+    document = repos.documents.get(document_id)
+    if document is None:
+        abort(404)
+    repos.documents.set_watched(document_id, not document.watched)
+    return redirect(request.referrer or url_for("web.prospect_detail", document_id=document_id))
 
 
 @bp.get("/prospects/<document_id>/pdf")
@@ -173,14 +221,6 @@ def toggle_category(key: str):
         abort(404)
     repos.sources.set_category_enabled(key, not category.enabled)
     return redirect(url_for("web.sources"))
-
-
-@bp.post("/tasks/<int:task_id>/toggle")
-def toggle_task(task_id: int):
-    repos = current_app.repos  # type: ignore[attr-defined]
-    if repos.desk.toggle_task(task_id) is None:
-        abort(404)
-    return redirect(request.referrer or url_for("web.desk"))
 
 
 @bp.get("/healthz")

@@ -29,24 +29,76 @@ class DeskService:
 
     # --- Desk / overview -------------------------------------------------
 
-    def kpis(self) -> list[dict[str, Any]]:
-        return [k.to_dict() for k in seed_data.KPIS]
-
     def overview(self) -> dict[str, Any]:
-        latest, error = self._safe(lambda: self.repos.triggers.latest(5), [])
+        """Главная. Всё, что можно посчитать из базы, считается из базы;
+        оставшиеся демо-виджеты помечены в шаблоне."""
+
+        def fetch():
+            triggers, documents = self.repos.triggers, self.repos.documents
+            return {
+                "latest_triggers": triggers.latest_added(5),
+                "new_triggers_24h": triggers.count_since(24),
+                "watchlist": documents.watchlist(10),
+                "watched_total": documents.count_watched(),
+                "briefs_week": documents.count_since(7),
+                "briefs_total": documents.count_all(),
+                "recent_briefs": documents.list(limit=4, offset=0)[0],
+            }
+
+        data, error = self._safe(fetch, {})
+        data = data or {}
+
         return {
-            "kpis": self.kpis(),
-            "latest_triggers": latest,
+            "kpis": self._kpis(data),
+            "latest_triggers": data.get("latest_triggers", []),
+            "watchlist": data.get("watchlist", []),
+            "recent_briefs": data.get("recent_briefs", []),
             "data_error": error,
-            "watchlist": self.repos.desk.watchlist(),
-            "tasks": self.repos.desk.tasks(),
-            "queue": self.repos.prospects.queue(),
-            "composition": seed_data.QUEUE_COMPOSITION,
+            "queue": self.repos.prospects.queue(),          # демо
+            "composition": seed_data.QUEUE_COMPOSITION,     # демо
             "suggestions": seed_data.SEARCH_SUGGESTIONS,
-            "recent_briefs": seed_data.RECENT_BRIEFS,
-            "total_triggers": seed_data.TOTAL_TRIGGERS,
             "coverage_days": seed_data.COVERAGE_DAYS,
         }
+
+    @staticmethod
+    def _kpis(data: dict[str, Any]) -> list[dict[str, Any]]:
+        new_triggers = data.get("new_triggers_24h", 0)
+        watched = data.get("watched_total", 0)
+        briefs_week = data.get("briefs_week", 0)
+        briefs_total = data.get("briefs_total", 0)
+
+        return [
+            {
+                "label": "New triggers · 24h",
+                "value": str(new_triggers),
+                "delta": "live",
+                "tone": "amber" if new_triggers else "muted",
+                "note": "added since yesterday",
+            },
+            {
+                # Отметок о «касании» в базе пока нет — держим 0, пока
+                # не появится колонка с датой последнего контакта.
+                "label": "Watchlist touched",
+                "value": "0",
+                "delta": "live",
+                "tone": "blue",
+                "note": f"of {watched} tracked",
+            },
+            {
+                "label": "Briefs enriched · week",
+                "value": str(briefs_week),
+                "delta": "live",
+                "tone": "green" if briefs_week else "muted",
+                "note": f"of {briefs_total} total",
+            },
+            {
+                "label": "Sources healthy",
+                "value": "7/8",
+                "delta": "1 delayed",
+                "tone": "amber",
+                "note": "Zefix retry at 06:00",
+            },
+        ]
 
     # --- Prospect brief (researched_documents) ---------------------------
 
