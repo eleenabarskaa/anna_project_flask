@@ -14,7 +14,7 @@
   <div style="display:flex;flex-direction:column;gap:7px">
     <div class="label">Home layout</div>
     <div class="seg">
-      {% for key, label in [('desk','Desk'), ('queue','Priority queue'), ('command','Command')] %}
+      {% for key, label in [('desk','Desk'), ('queue','Priority queue'), ('command','Chat')] %}
         <a href="{{ url_for('web.desk', variant=key) }}" class="{% if variant == key %}is-active{% endif %}">{{ label }}</a>
       {% endfor %}
     </div>
